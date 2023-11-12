@@ -45,7 +45,7 @@ jobs:
       app_version: ${{ steps.get-app-version.outputs.data }}
       git_ref: ${{ steps.setup-git-ref.outputs.data }}
     steps:
-      - name: Validate build options
+      - name: Validate build option
         run: |
          echo "Build options:"
          echo "- engine: ${{ inputs.engine }}"
@@ -54,7 +54,19 @@ jobs:
          echo "- build mode: ${{ inputs.build-mode }}"
          echo "- git reference: ${{ inputs.reference || github.ref_name }}"
 
-        #  validate blacklist combination
+        declare -a blacklist=(
+            "appbundle dev debug" 
+            "appbundle dev release" 
+            "appbundle staging debug"
+            "appbundle staging release" 
+            "appbundle production debug")
+
+        build_option="${{ inputs.artifact }} ${{ inputs.flavor }} ${{ inputs.build-mode }}"
+
+        if grep -q "${build_option}" <<< "${blacklist[@]}" ; then
+            echo "build option is not valid"
+            exit 1
+        fi
 
       - name: Dump GitHub context
         env:
