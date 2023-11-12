@@ -51,7 +51,7 @@ jobs:
          echo "- engine: $${{ inputs.engine }}"
          echo "- flavor: $${{ inputs.flavor }}"
          echo "- artifact type: $${{ inputs.artifact }}"
-         echo "- build mode: $${{ build-mode }}"
+         echo "- build mode: $${{ inputs.build-mode }}"
          echo "- git reference: $${{ inputs.reference || github.ref_name }}"
 
         #  validate blacklist combination
@@ -65,7 +65,7 @@ jobs:
         id: setup-git-ref
         run: |
           current_ref="${{ github.ref_name }}"
-          input_ref=${{ github.event.inputs.reference}}
+          input_ref=${{ inputs.reference}}
           if [ -n "$input_ref" ]; then
             current_ref=$input_ref
           fi
@@ -121,10 +121,10 @@ jobs:
     if: ${{ contains(needs.testing.result , 'success') }}
     
     env:
-      artifact_type: ${{ github.event.inputs.artifact }}
-      flavor: ${{ github.event.inputs.flavor }}
-      engine: ${{ github.event.inputs.engine }}
-      build_mode: ${{ github.event.inputs.build-mode }}
+      artifact_type: ${{ inputs.artifact }}
+      flavor: ${{ inputs.flavor }}
+      engine: ${{ inputs.engine }}
+      build_mode: ${{ inputs.build-mode }}
       SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
     runs-on: ubuntu-latest
