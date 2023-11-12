@@ -35,7 +35,7 @@ on:
         type: string
         description: branch, tag, or commit sha
 
-run-name: Build ${{ inputs.flavor }} ${{ inputs.artifact }} with ${{ inputs.engine }} (${{ inputs.reference || github.ref_name }})
+run-name: Build ${{ inputs.artifact }} ${{ inputs.flavor }} ${{ inputs.build-mode }} with ${{ inputs.engine }} (${{ inputs.reference || github.ref_name }})
 
 jobs:
   setup:
