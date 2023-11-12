@@ -47,26 +47,26 @@ jobs:
     steps:
       - name: Validate build option
         run: |
-         echo "Build options:"
-         echo "- engine: ${{ inputs.engine }}"
-         echo "- flavor: ${{ inputs.flavor }}"
-         echo "- artifact type: ${{ inputs.artifact }}"
-         echo "- build mode: ${{ inputs.build-mode }}"
-         echo "- git reference: ${{ inputs.reference || github.ref_name }}"
+          echo "Build options:"
+          echo "- engine: ${{ inputs.engine }}"
+          echo "- flavor: ${{ inputs.flavor }}"
+          echo "- artifact type: ${{ inputs.artifact }}"
+          echo "- build mode: ${{ inputs.build-mode }}"
+          echo "- git reference: ${{ inputs.reference || github.ref_name }}"
 
-        declare -a blacklist=(
-            "appbundle dev debug" 
-            "appbundle dev release" 
-            "appbundle staging debug"
-            "appbundle staging release" 
-            "appbundle production debug")
+          declare -a blacklist=(
+              "appbundle dev debug" 
+              "appbundle dev release" 
+              "appbundle staging debug"
+              "appbundle staging release" 
+              "appbundle production debug")
 
-        build_option="${{ inputs.artifact }} ${{ inputs.flavor }} ${{ inputs.build-mode }}"
+          build_option="${{ inputs.artifact }} ${{ inputs.flavor }} ${{ inputs.build-mode }}"
 
-        if grep -q "${build_option}" <<< "${blacklist[@]}" ; then
-            echo "build option is not valid"
-            exit 1
-        fi
+          if grep -q "${build_option}" <<< "${blacklist[@]}" ; then
+              echo "build option is not valid"
+              exit 1
+          fi
 
       - name: Dump GitHub context
         env:
