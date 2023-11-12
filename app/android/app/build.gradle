@@ -91,14 +91,14 @@ android {
             dimension "app"
             applicationId "com.thoughtlab.ditto.dev"
             versionNameSuffix "-dev"
-            resValue "string", "app_name", "Ditto - Dev"
+            resValue "string", "app_name", "Ditto (Dev)"
         }
 
         staging {
             dimension "app"
             applicationId "com.thoughtlab.ditto.staging"
             versionNameSuffix "-stg"
-            resValue "string", "app_name", "Ditto - Staging"
+            resValue "string", "app_name", "Ditto (Staging)"
         }
 
         production {

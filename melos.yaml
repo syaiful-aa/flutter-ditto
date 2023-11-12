@@ -1,0 +1,28 @@
+name: ditto
+
+packages:
+  - app/*
+  - modules/features/*
+  - modules/utilities/*
+
+ignore:
+  - 'modules/features/**/example'
+  - 'modules/utilities/**/example'
+
+scripts:
+  analyzeAll:
+    run: melos exec -- "flutter analyze --write=analyze_output ."
+    description: Run analyzer in all module
+
+  analyze: 
+    run: melos exec -- "flutter analyze --write=analyze_output ."
+    description: Run `dart analyze`
+    select-package:
+      flutter: true
+      dir-exists: lib
+
+  deepClean:
+    run: melos exec -- "flutter clean && rm -rf pubspec.lock ./build ./android/.gradle ./ios/.symlinks ./ios/Pods ./.dart-tool/build"
+    description: Run flutter clean and invalidate cache
+
+  

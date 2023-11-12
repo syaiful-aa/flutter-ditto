@@ -5,10 +5,14 @@ version: 0.1.0
 
 environment:
   sdk: '>=3.1.3 <4.0.0'
+  flutter: 3.13.7
 
 dependencies:
   flutter:
     sdk: flutter
+
+  third_parties:
+    path: ../modules/utilities/third_parties
 
 dev_dependencies:
   flutter_test:
