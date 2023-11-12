@@ -45,6 +45,11 @@ jobs:
       app_version: ${{ steps.get-app-version.outputs.data }}
       git_ref: ${{ steps.setup-git-ref.outputs.data }}
     steps:
+      - name: Validate build options
+        run: |
+         echo "Build options:"
+        #  validate blacklist combination
+
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
@@ -114,6 +119,7 @@ jobs:
       flavor: ${{ github.event.inputs.flavor }}
       engine: ${{ github.event.inputs.engine }}
       build_mode: ${{ github.event.inputs.build-mode }}
+      SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
     runs-on: ubuntu-latest
     
@@ -165,6 +171,7 @@ jobs:
           flutter-version: ${{ needs.setup.outputs.flutter_version }}
             
       - name: setup variables
+        id: get-variables
         run: |
           if [[ $flavor = 'production' ]]; then
             echo '===== running setup variables for flavor production ====='
@@ -179,7 +186,6 @@ jobs:
             echo "build_code=10" >> $GITHUB_OUTPUT
             echo "app_id=1:381838149860:android:7d3baffce73b6dc37644f1" >> $GITHUB_OUTPUT
           fi
-        id: get-variables
 
       - name: Build Debug Apk
         if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}
@@ -191,8 +197,6 @@ jobs:
           else
             flutter build apk --flavor $flavor --dart-define=showMonitoring=true --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
           fi
-        env:
-          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
       
       - name: Build Release Apk
         if: ${{ env.artifact_type == 'apk' && env.build_mode == 'release' }}
@@ -203,11 +207,9 @@ jobs:
             shorebird release android --artifact apk --force --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
           else
             flutter build apk --flavor $flavor --obfuscate --split-debug-info=build/debug_symbols --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
-          fi
-        env:
-          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+          fi     
 
-      - name: Deploy APK ${{ env.flavor }} ${{ env.build_mode }} with ${{ env.engine }} engine to The Firebase App Distribution for internal testing
+      - name: Deploy APK ${{ env.flavor }} ${{ env.build_mode }} with ${{ env.engine }} engine to firebase app distribution for internal testing
         if: ${{ env.artifact_type == 'apk' }}
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
@@ -217,7 +219,7 @@ jobs:
           file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
       
       # running when build is --release and flavor is staging, deploy to firebase
-      - name: Deploy APK staging release to The Firebase App Distribution for field trainers
+      - name: Deploy APK staging release to firebase app distribution for field trainers
         if: ${{ env.artifact_type == 'apk' && env.flavor == 'staging' && env.build_mode == 'release' }}
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
