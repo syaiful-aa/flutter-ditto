@@ -48,6 +48,12 @@ jobs:
       - name: Validate build options
         run: |
          echo "Build options:"
+         echo "- engine: $${{ inputs.engine }}"
+         echo "- flavor: $${{ inputs.flavor }}"
+         echo "- artifact type: $${{ inputs.artifact }}"
+         echo "- build mode: $${{ build-mode }}"
+         echo "- git reference: $${{ inputs.reference || github.ref_name }}"
+
         #  validate blacklist combination
 
       - name: Dump GitHub context
