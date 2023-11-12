@@ -1,0 +1,310 @@
+name: On Demand Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine:
+        type: choice
+        description: Build Engine
+        options: 
+        - flutter
+        - shorebird
+      flavor:
+        type: choice
+        description: Flavor
+        options: 
+        - dev
+        - staging
+        - production
+      build-mode:
+        type: choice
+        description: Build mode (show monitoring on debug)
+        options: 
+        - debug
+        - release
+      run-test:
+        type: boolean
+        description: Run unit test
+      artifact:
+        type: choice
+        description: Artifact Type
+        options: 
+        - apk
+        - appbundle
+      reference:
+        type: string
+        description: branch, tag, or commit sha
+
+run-name: Build ${{ inputs.flavor }} ${{ inputs.artifact }} with ${{ inputs.engine }} by @${{ github.actor }}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      flutter_version: ${{ steps.get-flutter-version.outputs.data }}
+      app_version: ${{ steps.get-app-version.outputs.data }}
+      git_ref: ${{ steps.setup-git-ref.outputs.data }}
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: Setup git reference
+        id: setup-git-ref
+        run: |
+          current_ref="${{ github.ref_name }}"
+          input_ref=${{ github.event.inputs.reference}}
+          if [ -n "$input_ref" ]; then
+            current_ref=$input_ref
+          fi
+          echo "data=$current_ref" >> $GITHUB_OUTPUT
+
+      - name: setup branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.setup-git-ref.outputs.data }}
+      
+      - name: Get Flutter Version from pubspec.yaml
+        id: get-flutter-version
+        run: |
+          flutter_version=$(cat ./app/pubspec.yaml | grep '  flutter:' | cut -d ':' -f2 | sed 's/ //')
+          echo "data=$flutter_version" >> $GITHUB_OUTPUT
+      
+      - name: Get App Version from pubspec.yaml
+        id: get-app-version
+        run: |
+          app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | sed 's/ //')
+          echo "data=$app_version" >> $GITHUB_OUTPUT
+
+  testing:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: setup branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.setup.outputs.git_ref }}
+       
+      - name: setup flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ needs.setup.outputs.flutter_version }}
+          cache: true
+      
+      - name: Setup SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_KEY }}
+      
+      - name: Setup Melos and Install Dependencies
+        run: dart pub global activate melos 2.9.0 && dart pub global run melos bs
+      
+      - name: Analyze
+        id: analyze
+        run: melos run analyzeAll
+      
+  deploy:
+    needs: [setup, testing]
+    
+    if: ${{ contains(needs.testing.result , 'success') }}
+    
+    env:
+      artifact_type: ${{ github.event.inputs.artifact }}
+      flavor: ${{ github.event.inputs.flavor }}
+      engine: ${{ github.event.inputs.engine }}
+      build_mode: ${{ github.event.inputs.build-mode }}
+
+    runs-on: ubuntu-latest
+    
+    outputs:
+      build_code: ${{ steps.get-variables.outputs.build_code }}
+      app_id: ${{ steps.get-variables.outputs.app_id }}
+
+    steps:
+      - name: setup branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.setup.outputs.git_ref }}
+      
+      - name: Setup SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_KEY }}
+      
+      - name: Setup Keystore
+        working-directory: ./app
+        run: |
+          mkdir -p android/app/keys
+          echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 --decode > android/app/keys/thoughtlab-debug.jks
+          echo "${{ secrets.DEBUG_KEY_PROPERTIES }}" | base64 --decode > android/debug-key.properties
+          echo "${{ secrets.PROD_KEYSTORE }}" | base64 --decode > android/app/keys/thoughtlab.jks
+          echo "${{ secrets.PROD_KEY_PROPERTIES }}" | base64 --decode > android/key.properties
+          
+      
+      - name: setup java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "zulu"
+          java-version: "12.x"
+          cache: 'gradle'
+
+      - name: setup flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ needs.setup.outputs.flutter_version }}
+          cache: true
+            
+      - name: install firebase cli
+        run: curl -sL https://firebase.tools | bash
+
+      - name: 🐦 Setup Shorebird
+        if: ${{ env.engine == 'shorebird' }}
+        uses: shorebirdtech/setup-shorebird@v0
+        with:
+          flutter-version: ${{ needs.setup.outputs.flutter_version }}
+            
+      - name: setup variables
+        run: |
+          if [[ $flavor = 'production' ]]; then
+            echo '===== running setup variables for flavor production ====='
+            echo "app_id=1:381838149860:android:282e497dae910ce57644f1" >> $GITHUB_OUTPUT
+            echo "build_code=12" >> $GITHUB_OUTPUT
+          elif [[ $flavor = 'staging' ]]; then
+            echo '===== running setup variables for flavor staging ====='
+            echo "app_id=1:381838149860:android:dac0e1845db3e9107644f1" >> $GITHUB_OUTPUT
+            echo "build_code=11" >> $GITHUB_OUTPUT
+          else
+            echo '===== running setup variables for flavor dev ====='
+            echo "build_code=10" >> $GITHUB_OUTPUT
+            echo "app_id=1:381838149860:android:7d3baffce73b6dc37644f1" >> $GITHUB_OUTPUT
+          fi
+        id: get-variables
+
+      - name: Build Debug Apk
+        if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}
+        working-directory: ./app
+        run: |
+          if [[ $engine = 'shorebird' ]]
+          then
+            shorebird release android --artifact apk --force --flavor $flavor '--' --dart-define=showMonitoring=true 
+          else
+            flutter build apk --flavor $flavor --dart-define=showMonitoring=true --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
+          fi
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+      
+      - name: Build Release Apk
+        if: ${{ env.artifact_type == 'apk' && env.build_mode == 'release' }}
+        working-directory: ./app
+        run: |
+          if [[ $engine = 'shorebird' ]]
+          then
+            shorebird release android --artifact apk --force --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
+          else
+            flutter build apk --flavor $flavor --obfuscate --split-debug-info=build/debug_symbols --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
+          fi
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+
+      - name: Deploy APK ${{ env.flavor }} ${{ env.build_mode }} with ${{ env.engine }} engine to The Firebase App Distribution for internal testing
+        if: ${{ env.artifact_type == 'apk' }}
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ steps.get-variables.outputs.app_id }}
+          token: ${{ secrets.FIREBASE_TOKEN }}
+          groups: internal-testers
+          file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
+      
+      # running when build is --release and flavor is staging, deploy to firebase
+      - name: Deploy APK staging release to The Firebase App Distribution for field trainers
+        if: ${{ env.artifact_type == 'apk' && env.flavor == 'staging' && env.build_mode == 'release' }}
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ steps.get-variables.outputs.app_id }}
+          token: ${{ secrets.FIREBASE_TOKEN }}
+          groups: field-trainers
+          file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
+      
+      # - name: notify on deploy
+      #   id: notify-deploy
+      #   if: ${{ success() && env.artifact_type == 'apk' }}
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     payload: |
+      #       {
+      #         "text": "Build ${{ needs.setup.outputs.app_version }} ${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }} is deployed to ${{ env.flavor }}.",
+      #         "blocks": [
+      #           {
+      #             "type": "section",
+      #             "text": {
+      #               "text": "*Build ${{ needs.setup.outputs.app_version }} ${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}* is deployed to *${{ env.flavor }}*.\n:link: Direct to <https://appdistribution.firebase.google.com/testerapps/${{ needs.deploy.outputs.app_id}}|App Tester>.",
+      #               "type": "mrkdwn"
+      #             }
+      #           },
+      #           {
+      #             "type": "context",
+      #             "elements": [
+      #               {
+      #                 "type": "image",
+      #                 "image_url": "https://firebasestorage.googleapis.com/v0/b/agriaku-mitra.appspot.com/o/agriaku_logo.jpeg?alt=media&token=d055b273-2def-43cd-971b-62c14305ac74",
+      #                 "alt_text": "agriaku logo"
+      #               },
+      #               {
+      #                 "type": "mrkdwn",
+      #                 "text": "On demand build: ${{ needs.setup.outputs.git_ref }}"
+      #               }
+      #             ]
+      #           },
+      #           {
+      #             "type": "context",
+      #             "elements": [
+      #               {
+      #                 "type": "plain_text",
+      #                 "text": ":hammer_and_wrench: ${{ env.build_mode }}"
+      #               }
+      #             ]
+      #           }
+      #         ]
+      #       }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+      
+      # running when build is --release and flavor is production, generate aab file and upload to playstore
+      - name: Build AppBundle
+        if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
+        working-directory: ./app
+        run: |
+          if [[ $engine = 'shorebird' ]]
+          then
+            shorebird release android --force --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
+          else
+            flutter build appbundle --flavor $flavor --obfuscate --split-debug-info=build/debug_symbols 
+          fi
+
+      - name: Save AAB Artifact
+        if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ format('release-{0}', github.run_number) }}
+          path: ./app/build/app/outputs/bundle/productionRelease/app-${{ env.flavor }}-${{ env.build_mode }}.aab
+      
+      # - name: release draft to playstore
+      #   id: release-playstore
+      #   if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+      #     packageName: com.agriaku.mitra
+      #     track: production
+      #     status: draft
+      #     releaseFiles: ./app/build/app/outputs/bundle/productionRelease/app-${{ env.flavor }}-${{ env.build_mode }}.aab
+      #     mappingFile: ./app/build/app/outputs/mapping/${{ env.flavor }}Release/mapping.txt
+      #     debugSymbols: ./app/build/app/intermediates/merged_native_libs/productionRelease/out/lib
+
+      - name: Upload Debug Symbols
+        if: ${{ env.build_mode == 'release' }}
+        run: firebase crashlytics:symbols:upload --app=${{ steps.get-variables.outputs.app_id }} app/build/debug_symbols --token ${{ secrets.FIREBASE_TOKEN }}
+
+        
