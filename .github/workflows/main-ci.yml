@@ -8,7 +8,12 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    if: ${{ github.event.issue.pull_request && contains(fromJson('["/test", "/build", "/release", "/patch"]'), github.event.comment.body) }}
+    if: |
+      github.event.issue.pull_request && 
+      ( startsWith(github.event.comment.body, '/test') ||
+      startsWith(github.event.comment.body, '/build') ||
+      startsWith(github.event.comment.body, '/release') ||
+      startsWith(github.event.comment.body, '/patch') )
     outputs:
       head_ref: ${{ steps.comment-branch.outputs.head_ref }}
       base_ref: ${{ steps.comment-branch.outputs.base_ref }}
@@ -188,7 +193,9 @@ jobs:
 
   deploy:
     needs: [setup, testing]
-    if: ${{ contains(fromJson('["/build", "/release"]'), needs.setup.outputs.action) && contains(needs.testing.result , 'success') }}
+    if: |
+      contains(needs.testing.result , 'success') &&
+      ( startsWith(needs.setup.outputs.action, '/build') || startsWith(needs.setup.outputs.action, '/release') )
     strategy:
       matrix:
         build_options: ${{ fromJSON(needs.setup.outputs.build_options) }}
