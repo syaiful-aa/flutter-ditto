@@ -130,7 +130,7 @@ jobs:
       
   deploy:
     needs: [setup, testing]
-    if: ${{ contains(needs.testing.result , 'success') || ! inputs.run-test }}
+    if: ${{ contains(needs.testing.result , 'success') || inputs.run-test == false }}
     env:
       artifact_type: ${{ inputs.artifact }}
       flavor: ${{ inputs.flavor }}
