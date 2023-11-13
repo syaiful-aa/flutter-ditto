@@ -51,7 +51,6 @@ jobs:
           if [[ $action = '/release' ]]; then
             engine="shorebird"
           fi
-          echo ">>> $action | $engine"
           echo "action=$action" >> $GITHUB_OUTPUT
           echo "engine=$engine" >> $GITHUB_OUTPUT
           echo "build_options=$(jq -r -c . <<< "${{ toJson(steps.parse-input.outputs.build_options) }}")" >> $GITHUB_OUTPUT
@@ -210,10 +209,6 @@ jobs:
 
     runs-on: ubuntu-latest
     
-    # outputs:
-    #   build_code: ${{ steps.get-variables.outputs.build_code }}
-    #   app_id: ${{ steps.get-variables.outputs.app_id }}
-
     steps:
       - name: setup branch
         uses: actions/checkout@v3
@@ -253,52 +248,64 @@ jobs:
       - name: setup variables
         id: get-variables
         run: |
+          build_code=""
           if [[ $flavor = 'production' ]]; then
             echo '===== running setup variables for flavor production ====='
             echo "app_id=1:381838149860:android:282e497dae910ce57644f1" >> $GITHUB_OUTPUT
-            echo "build_code=12" >> $GITHUB_OUTPUT
+            build_code="12"
           elif [[ $flavor = 'staging' ]]; then
             echo '===== running setup variables for flavor staging ====='
             echo "app_id=1:381838149860:android:dac0e1845db3e9107644f1" >> $GITHUB_OUTPUT
-            echo "build_code=11" >> $GITHUB_OUTPUT
+            build_code="11"
           else
             echo '===== running setup variables for flavor dev ====='
-            echo "build_code=10" >> $GITHUB_OUTPUT
             echo "app_id=1:381838149860:android:7d3baffce73b6dc37644f1" >> $GITHUB_OUTPUT
+            build_code="10"
           fi
 
-      - name: dump
-        run: |
-          echo $engine $flavor $artifact_type $build_mode
+          echo "build_code=$build_code" >> $GITHUB_OUTPUT
+          echo "build_number=${{ format('{0}{1}', $build_code, github.run_number) }}" >> $GITHUB_OUTPUT
 
-      # - name: Build Debug Apk
-      #   if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}
-      #   working-directory: ./app
-      #   run: flutter build apk --flavor $flavor --dart-define=showMonitoring=true --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
-      
-      # - name: Build Release Apk
-      #   if: ${{ env.artifact_type == 'apk' && env.build_mode == 'release' }}
-      #   working-directory: ./app
-      #   run: flutter build apk --obfuscate --split-debug-info=build/debug_symbols --flavor $flavor --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
-      
-      # - name: Deploy APK ${{ env.flavor }} ${{ env.build_mode }} to The Firebase App Distribution for internal testing
-      #   if: ${{ env.artifact_type == 'apk' }}
-      #   uses: wzieba/Firebase-Distribution-Github-Action@v1
-      #   with:
-      #     appId: ${{ steps.get-variables.outputs.app_id }}
-      #     token: ${{ secrets.FIREBASE_TOKEN }}
-      #     groups: mitra-testers
-      #     file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
+      - name: Build Debug Apk
+        if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}
+        working-directory: ./app
+        run: |
+          if [[ $engine = 'shorebird' ]]
+          then
+            shorebird release android --artifact apk --force --flavor $flavor '--' --dart-define=showMonitoring=true 
+          else
+            flutter build apk --flavor $flavor --dart-define=showMonitoring=true --build-number=${{ steps.get-variables.outputs.build_number }}
+          fi
+
+      - name: Build Release Apk
+        if: ${{ env.artifact_type == 'apk' && env.build_mode == 'release' }}
+        working-directory: ./app
+        run: |
+          if [[ $engine = 'shorebird' ]]
+          then
+            shorebird release android --artifact apk --force --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
+          else
+            flutter build apk --flavor $flavor --obfuscate --split-debug-info=build/debug_symbols --build-number=${{ steps.get-variables.outputs.build_number }}
+          fi    
+
+      - name: Deploy APK ${{ env.flavor }} ${{ env.build_mode }} with ${{ env.engine }} engine to firebase app distribution for internal testing
+        if: ${{ env.artifact_type == 'apk' }}
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ steps.get-variables.outputs.app_id }}
+          token: ${{ secrets.FIREBASE_TOKEN }}
+          groups: internal-testers
+          file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
       
       ## running when build is --release and flavor is staging, deploy to firebase
-      # - name: Deploy APK staging release to The Firebase App Distribution for field trainers
-      #   if: ${{ env.artifact_type == 'apk' && env.flavor == 'staging' && env.build_mode == 'release' }}
-      #   uses: wzieba/Firebase-Distribution-Github-Action@v1
-      #   with:
-      #     appId: ${{ steps.get-variables.outputs.app_id }}
-      #     token: ${{ secrets.FIREBASE_TOKEN }}
-      #     groups: field-trainers
-      #     file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
+      - name: Deploy APK staging release to The Firebase App Distribution for field trainers
+        if: ${{ env.artifact_type == 'apk' && env.flavor == 'staging' && env.build_mode == 'release' }}
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ steps.get-variables.outputs.app_id }}
+          token: ${{ secrets.FIREBASE_TOKEN }}
+          groups: field-trainers
+          file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
       
       # - name: notify on deploy
       #   id: notify-deploy
@@ -307,12 +314,12 @@ jobs:
       #   with:
       #     payload: |
       #       {
-      #         "text": "Build ${{ needs.setup.outputs.app_version }} ${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }} is deployed to ${{ env.flavor }}.",
+      #         "text": "Build ${{ needs.setup.outputs.app_version }} ${{ steps.get-variables.outputs.build_number }} is deployed to ${{ env.flavor }}.",
       #         "blocks": [
       #           {
       #             "type": "section",
       #             "text": {
-      #               "text": "*Build ${{ needs.setup.outputs.app_version }} ${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}* is deployed to *${{ env.flavor }}*.\n:link: Direct to <https://appdistribution.firebase.google.com/testerapps/${{ needs.deploy.outputs.app_id}}|App Tester>.",
+      #               "text": "*Build ${{ needs.setup.outputs.app_version }} ${{ steps.get-variables.outputs.build_number }}* is deployed to *${{ env.flavor }}*.\n:link: Direct to <https://appdistribution.firebase.google.com/testerapps/${{ steps.get-variables.outputs.app_id }}|App Tester>.",
       #               "type": "mrkdwn"
       #             }
       #           },
@@ -345,18 +352,24 @@ jobs:
       #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       #     SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       
-      ## running when build is --release and flavor is production, generate aab file and upload to playstore
-      # - name: Build AppBundle
-      #   if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
-      #   working-directory: ./app
-      #   run: flutter build appbundle --obfuscate --split-debug-info=build/debug_symbols --flavor $flavor
+      # running when build is --release and flavor is production, generate aab file and upload to playstore
+      - name: Build AppBundle
+        if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
+        working-directory: ./app
+        run: |
+          if [[ $engine = 'shorebird' ]]
+          then
+            shorebird release android --force --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
+          else
+            flutter build appbundle --flavor $flavor --obfuscate --split-debug-info=build/debug_symbols 
+          fi
 
-      # - name: Save AAB Artifact
-      #   if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
-      #   uses: actions/upload-artifact@v1
-      #   with:
-      #     name: ${{ format('release-{0}', github.run_number) }}
-      #     path: ./app/build/app/outputs/bundle/productionRelease/app-${{ env.flavor }}-${{ env.build_mode }}.aab
+      - name: Save AAB Artifact
+        if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ format('release-{0}', github.run_number) }}
+          path: ./app/build/app/outputs/bundle/productionRelease/app-${{ env.flavor }}-${{ env.build_mode }}.aab
       
       # - name: release draft to playstore
       #   id: release-playstore
@@ -371,8 +384,8 @@ jobs:
       #     mappingFile: ./app/build/app/outputs/mapping/${{ env.flavor }}Release/mapping.txt
       #     debugSymbols: ./app/build/app/intermediates/merged_native_libs/productionRelease/out/lib
 
-      # - name: Upload Debug Symbols
-      #   if: ${{ env.build_mode == 'release' }}
-      #   run: firebase crashlytics:symbols:upload --app=${{ steps.get-variables.outputs.app_id }} app/build/debug_symbols --token ${{ secrets.FIREBASE_TOKEN }}
+      - name: Upload Debug Symbols
+        if: ${{ env.build_mode == 'release' }}
+        run: firebase crashlytics:symbols:upload --app=${{ steps.get-variables.outputs.app_id }} app/build/debug_symbols --token ${{ secrets.FIREBASE_TOKEN }}
 
         

@@ -141,10 +141,6 @@ jobs:
 
     runs-on: ubuntu-latest
     
-    outputs:
-      build_code: ${{ steps.get-variables.outputs.build_code }}
-      app_id: ${{ steps.get-variables.outputs.app_id }}
-
     steps:
       - name: setup branch
         uses: actions/checkout@v3
@@ -191,19 +187,23 @@ jobs:
       - name: setup variables
         id: get-variables
         run: |
+          build_code=""
           if [[ $flavor = 'production' ]]; then
             echo '===== running setup variables for flavor production ====='
             echo "app_id=1:381838149860:android:282e497dae910ce57644f1" >> $GITHUB_OUTPUT
-            echo "build_code=12" >> $GITHUB_OUTPUT
+            build_code="12"
           elif [[ $flavor = 'staging' ]]; then
             echo '===== running setup variables for flavor staging ====='
             echo "app_id=1:381838149860:android:dac0e1845db3e9107644f1" >> $GITHUB_OUTPUT
-            echo "build_code=11" >> $GITHUB_OUTPUT
+            build_code="11"
           else
             echo '===== running setup variables for flavor dev ====='
-            echo "build_code=10" >> $GITHUB_OUTPUT
             echo "app_id=1:381838149860:android:7d3baffce73b6dc37644f1" >> $GITHUB_OUTPUT
+            build_code="10"
           fi
+
+          echo "build_code=$build_code" >> $GITHUB_OUTPUT
+          echo "build_number=${{ format('{0}{1}', $build_code, github.run_number) }}" >> $GITHUB_OUTPUT
 
       - name: Build Debug Apk
         if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}
@@ -213,7 +213,7 @@ jobs:
           then
             shorebird release android --artifact apk --force --flavor $flavor '--' --dart-define=showMonitoring=true 
           else
-            flutter build apk --flavor $flavor --dart-define=showMonitoring=true --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
+            flutter build apk --flavor $flavor --dart-define=showMonitoring=true --build-number=${{ steps.get-variables.outputs.build_number }}
           fi
       
       - name: Build Release Apk
@@ -224,7 +224,7 @@ jobs:
           then
             shorebird release android --artifact apk --force --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
           else
-            flutter build apk --flavor $flavor --obfuscate --split-debug-info=build/debug_symbols --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
+            flutter build apk --flavor $flavor --obfuscate --split-debug-info=build/debug_symbols --build-number=${{ steps.get-variables.outputs.build_number }}
           fi     
 
       - name: Deploy APK ${{ env.flavor }} ${{ env.build_mode }} with ${{ env.engine }} engine to firebase app distribution for internal testing
@@ -253,12 +253,12 @@ jobs:
       #   with:
       #     payload: |
       #       {
-      #         "text": "Build ${{ needs.setup.outputs.app_version }} ${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }} is deployed to ${{ env.flavor }}.",
+      #         "text": "Build ${{ needs.setup.outputs.app_version }} ${{ steps.get-variables.outputs.build_number }} is deployed to ${{ env.flavor }}.",
       #         "blocks": [
       #           {
       #             "type": "section",
       #             "text": {
-      #               "text": "*Build ${{ needs.setup.outputs.app_version }} ${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}* is deployed to *${{ env.flavor }}*.\n:link: Direct to <https://appdistribution.firebase.google.com/testerapps/${{ needs.deploy.outputs.app_id}}|App Tester>.",
+      #               "text": "*Build ${{ needs.setup.outputs.app_version }} ${{ steps.get-variables.outputs.build_number }}* is deployed to *${{ env.flavor }}*.\n:link: Direct to <https://appdistribution.firebase.google.com/testerapps/${{ steps.get-variables.outputs.app_id}}|App Tester>.",
       #               "type": "mrkdwn"
       #             }
       #           },
