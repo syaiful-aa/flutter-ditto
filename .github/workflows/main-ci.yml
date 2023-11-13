@@ -263,12 +263,12 @@ jobs:
       - name: Patch debug app
         if: ${{ env.build_mode == 'debug' }}
         working-directory: ./app
-        run: shorebird patch android --flavor $flavor '--' --dart-define=showMonitoring=true 
+        run: shorebird patch android --force --flavor $flavor '--' --dart-define=showMonitoring=true 
 
       - name: Patch release app
         if: ${{ env.build_mode == 'release' }}
         working-directory: ./app
-        run: shorebird patch android --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
+        run: shorebird patch android --force --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
 
       - name: Upload Debug Symbols
         if: ${{ env.build_mode == 'release' }}
