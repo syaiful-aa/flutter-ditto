@@ -46,11 +46,12 @@ jobs:
       - name: Get job action and build options
         id: get-parsed-input
         run: | 
-          action=${{ toJson(steps.parse-input.outputs.action) }}
+          action="${{ toJson(steps.parse-input.outputs.action) }}"
           engine="flutter"
           if [[ $action = '/release' ]]; then
             engine="shorebird"
           fi
+          echo ">>> $action | $engine"
           echo "action=$action" >> $GITHUB_OUTPUT
           echo "engine=$engine" >> $GITHUB_OUTPUT
           echo "build_options=$(jq -r -c . <<< "${{ toJson(steps.parse-input.outputs.build_options) }}")" >> $GITHUB_OUTPUT
