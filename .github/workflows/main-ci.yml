@@ -38,7 +38,8 @@ jobs:
 
       - name: Parse command from comment
         id: parse-input
-        uses: Agriaku/agriaku_app_actions/command-parser@v1.0.0
+        # uses: Agriaku/agriaku_app_actions/command-parser@v1.4.0
+        uses: syaiful-aa/actions-experiment/command-parser@v3.3.0
         with:
           command: ${{ github.event.comment.body }}
       
