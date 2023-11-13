@@ -4,6 +4,9 @@ on:
   issue_comment:
     types:
       - created
+      
+env:
+  SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
 jobs:
   setup:
