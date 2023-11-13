@@ -244,6 +244,12 @@ jobs:
             
       - name: install firebase cli
         run: curl -sL https://firebase.tools | bash
+
+      - name: 🐦 Setup Shorebird
+        if: ${{ env.engine == 'shorebird' }}
+        uses: shorebirdtech/setup-shorebird@v0
+        with:
+          flutter-version: ${{ needs.setup.outputs.flutter_version }}
             
       - name: setup variables
         id: get-variables
