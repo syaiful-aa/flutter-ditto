@@ -203,7 +203,7 @@ jobs:
           fi
 
           echo "build_code=$build_code" >> $GITHUB_OUTPUT
-          echo "build_number=${{ format('{0}{1}', $build_code, github.run_number) }}" >> $GITHUB_OUTPUT
+          echo "build_number=${build_code}${{ github.run_number }}" >> $GITHUB_OUTPUT
 
       - name: Build Debug Apk
         if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}

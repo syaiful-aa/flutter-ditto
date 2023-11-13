@@ -264,15 +264,12 @@ jobs:
           fi
 
           echo "build_code=$build_code" >> $GITHUB_OUTPUT
-          echo ">>>"
-          echo $build_code
           echo "build_number=${build_code}${{ github.run_number }}" >> $GITHUB_OUTPUT
 
       - name: Build Debug Apk
         if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}
         working-directory: ./app
         run: |
-          echo "${{ steps.get-variables.outputs.build_number }}"
           if [[ $engine = 'shorebird' ]]
           then
             shorebird release android --artifact apk --force --flavor $flavor '--' --dart-define=showMonitoring=true 
