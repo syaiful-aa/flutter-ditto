@@ -101,8 +101,9 @@ jobs:
           echo "data=$app_version" >> $GITHUB_OUTPUT
 
   testing:
-    runs-on: ubuntu-latest
     needs: setup
+    if: ${{ inputs.run-test }}
+    runs-on: ubuntu-latest
     steps:
       - name: setup branch
         uses: actions/checkout@v3
@@ -129,9 +130,7 @@ jobs:
       
   deploy:
     needs: [setup, testing]
-    
-    if: ${{ contains(needs.testing.result , 'success') }}
-    
+    if: ${{ contains(needs.testing.result , 'success') || ! inputs.run-test }}
     env:
       artifact_type: ${{ inputs.artifact }}
       flavor: ${{ inputs.flavor }}
