@@ -195,6 +195,86 @@ jobs:
       #       for further detail you can check this action summary
       #       https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
+  patch:
+    needs: [setup, testing]
+    if: contains(needs.testing.result , 'success') && startsWith(needs.setup.outputs.action, '/patch')
+    strategy:
+      matrix:
+        build_options: ${{ fromJSON(needs.setup.outputs.build_options) }}
+    env:
+      flavor: ${{ matrix.build_options.flavor }}
+      build_mode: ${{ matrix.build_options.mode }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.setup.outputs.head_ref }}
+      
+      - name: Setup SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_KEY }}
+      
+      - name: Setup Keystore
+        working-directory: ./app
+        run: |
+          mkdir -p android/app/keys
+          echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 --decode > android/app/keys/thoughtlab-debug.jks
+          echo "${{ secrets.DEBUG_KEY_PROPERTIES }}" | base64 --decode > android/debug-key.properties
+          echo "${{ secrets.PROD_KEYSTORE }}" | base64 --decode > android/app/keys/thoughtlab.jks
+          echo "${{ secrets.PROD_KEY_PROPERTIES }}" | base64 --decode > android/key.properties
+      
+      - name: setup java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "zulu"
+          java-version: "12.x"
+          cache: 'gradle'
+
+      - name: setup flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ needs.setup.outputs.flutter_version }}
+          cache: true
+            
+      - name: install firebase cli
+        run: curl -sL https://firebase.tools | bash
+
+      - name: 🐦 Setup Shorebird
+        if: ${{ env.engine == 'shorebird' }}
+        uses: shorebirdtech/setup-shorebird@v0
+        with:
+          flutter-version: ${{ needs.setup.outputs.flutter_version }}
+
+      - name: setup variables
+        id: get-variables
+        run: |
+          if [[ $flavor = 'production' ]]; then
+            echo '===== running setup variables for flavor production ====='
+            echo "app_id=1:381838149860:android:282e497dae910ce57644f1" >> $GITHUB_OUTPUT
+          elif [[ $flavor = 'staging' ]]; then
+            echo '===== running setup variables for flavor staging ====='
+            echo "app_id=1:381838149860:android:dac0e1845db3e9107644f1" >> $GITHUB_OUTPUT
+          else
+            echo '===== running setup variables for flavor dev ====='
+            echo "app_id=1:381838149860:android:7d3baffce73b6dc37644f1" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Patch debug app
+        if: ${{ env.build_mode == 'debug' }}
+        working-directory: ./app
+        run: shorebird patch android --flavor $flavor '--' --dart-define=showMonitoring=true 
+
+      - name: Patch release app
+        if: ${{ env.build_mode == 'release' }}
+        working-directory: ./app
+        run: shorebird patch android --flavor $flavor '--' --obfuscate --split-debug-info=build/debug_symbols
+
+      - name: Upload Debug Symbols
+        if: ${{ env.build_mode == 'release' }}
+        run: firebase crashlytics:symbols:upload --app=${{ steps.get-variables.outputs.app_id }} app/build/debug_symbols --token ${{ secrets.FIREBASE_TOKEN }}
+
   deploy:
     needs: [setup, testing]
     if: |
