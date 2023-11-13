@@ -47,9 +47,9 @@ jobs:
         id: get-parsed-input
         run: | 
           action=${{ toJson(steps.parse-input.outputs.action) }}
-          engine = 'flutter'
+          engine="flutter"
           if [[ $action = '/release' ]]; then
-            engine = 'shorebird'
+            engine="shorebird"
           fi
           echo "action=$action" >> $GITHUB_OUTPUT
           echo "engine=$engine" >> $GITHUB_OUTPUT
