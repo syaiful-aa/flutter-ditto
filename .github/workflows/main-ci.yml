@@ -1,0 +1,369 @@
+name: Main CI/CD
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && contains(fromJson('["/test", "/build", "/release", "/patch"]'), github.event.comment.body) }}
+    outputs:
+      head_ref: ${{ steps.comment-branch.outputs.head_ref }}
+      base_ref: ${{ steps.comment-branch.outputs.base_ref }}
+      head_sha: ${{ steps.comment-branch.outputs.head_sha }}
+      flutter_version: ${{ steps.get-flutter-version.outputs.data }}
+      app_version: ${{ steps.get-app-version.outputs.data }}
+      issue_number: ${{ steps.get-pr-details.outputs.number }}
+      action: ${{ steps.get-parsed-input.outputs.action }}
+      engine: ${{ steps.get-parsed-input.outputs.engine }}
+      build_options: ${{ steps.get-parsed-input.outputs.build_options }}
+    steps:
+      - name: get pull request metadata
+        uses: xt0rted/pull-request-comment-branch@v1
+        id: comment-branch
+        
+      - name: get PR details
+        uses: 8BitJonny/gh-get-current-pr@2.1.3
+        id: get-pr-details
+        with:
+          github-token: ${{ github.token }}
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+
+      - name: Parse command from comment
+        id: parse-input
+        uses: Agriaku/agriaku_app_actions/command-parser@v1.0.0
+        with:
+          command: ${{ github.event.comment.body }}
+      
+      - name: Get job action and build options
+        id: get-parsed-input
+        run: | 
+          action=${{ toJson(steps.parse-input.outputs.action) }}
+          engine = 'flutter'
+          if [[ $action = '/release' ]]; then
+            engine = 'shorebird'
+          fi
+          echo "action=$action" >> $GITHUB_OUTPUT
+          echo "engine=$engine" >> $GITHUB_OUTPUT
+          echo "build_options=$(jq -r -c . <<< "${{ toJson(steps.parse-input.outputs.build_options) }}")" >> $GITHUB_OUTPUT
+      
+      - name: setup branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.comment-branch.outputs.head_ref }}
+      
+      - name: Get Flutter Version from pubspec.yaml
+        id: get-flutter-version
+        run: |
+          flutter_version=$(cat ./app/pubspec.yaml | grep '  flutter:' | cut -d ':' -f2 | sed 's/ //')
+          echo "data=$flutter_version" >> $GITHUB_OUTPUT
+      
+      - name: Get App Version from pubspec.yaml
+        id: get-app-version
+        run: |
+          app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | sed 's/ //')
+          echo "data=$app_version" >> $GITHUB_OUTPUT
+
+  testing:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: setup branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.setup.outputs.head_ref }}
+       
+      - name: setup flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ needs.setup.outputs.flutter_version }}
+          cache: true
+      
+      - name: Setup SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_KEY }}
+      
+      - name: Setup Melos and Install Dependencies
+        run: dart pub global activate melos 2.9.0 && dart pub global run melos bs
+      
+      - name: Analyze
+        id: analyze
+        run: melos run analyzeAll
+
+      # - name: Combine analyze result
+      #   id: combine-analyze-result
+      #   if: failure() && steps.analyze.outcome == 'failure'
+      #   shell: bash
+      #   run: |
+      #     for file in $(find . -type f -name "analyze_output")
+      #     do if [ -s $file ]; then
+      #         cat "$file" >> analyze_output_all 
+      #         echo "" >> analyze_output_all
+      #       fi
+      #     done
+
+      #     base_dir=$(pwd)
+      #     sed -i "s|$base_dir||g" analyze_output_all
+
+      #     delimiter="$(openssl rand -hex 8)"
+      #     echo "result<<${delimiter}" >> "${GITHUB_OUTPUT}"
+      #     echo "$(cat analyze_output_all)" >> "${GITHUB_OUTPUT}"
+      #     echo "${delimiter}" >> "${GITHUB_OUTPUT}"
+
+      # - name: Create analyze result comment
+      #   if: failure() && steps.analyze.outcome == 'failure'
+      #   uses: peter-evans/create-or-update-comment@v2
+      #   with:
+      #     issue-number: ${{ needs.setup.outputs.issue_number }}
+      #     body: |
+      #       #Analyze Failed
+
+      #       ```
+      #       ${{ steps.combine-analyze-result.outputs.result }}
+      #       ```
+
+      #       for further detail you can check this action summary
+      #       https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      
+      # - name: Install lcov
+      #   uses: hrishikesh-kadam/setup-lcov@v1
+        
+      # - name: run testing coverage either on all (main or relase) or impacted module(s) only (on dev or feature)
+      #   shell: bash
+      #   run: |
+      #     git fetch origin ${{ needs.setup.outputs.base_ref }}
+      #     if [[ ${{ ( startsWith(needs.setup.outputs.base_ref , 'main') || startsWith(needs.setup.outputs.base_ref , 'release') ) }} = true ]]; then
+      #       echo '======== testing on all modules ========'
+      #       list_config=''
+      #     else
+      #       echo '======== testing on only impacted module(s) ========'
+      #       list_config='--diff=origin/${{ needs.setup.outputs.base_ref }} '
+      #     fi
+      #     if [ "$(melos list $list_config --dir-exists='test' | grep -ohe '\w*_module\w*\|\w*_mitra\w*\|\w*_coin\w*')" ]; then
+      #       for folder in $(melos list -r $list_config --dir-exists='test')
+      #       do
+      #         melos exec --scope=$folder  -- "flutter test --no-pub --coverage \
+      #         && lcov --ignore-errors unused --extract coverage/lcov.info 'lib/src/pages/*/*_view_model_impl.dart' 'lib/pages/*/*_view_model_impl.dart' 'lib/src/*/*/*_repository_impl.dart' 'lib/src/*/*_impl.dart' 'lib /src/usecase/*_usecase.dart' -o coverage/lcov.info \
+      #         && if [ -s coverage/lcov.info ]; then genhtml coverage/lcov.info -o coverage; fi"
+      #         coverage=$(echo $folder : $(melos exec --scope=$folder "lcov --summary ./coverage/lcov.info" | grep "lines......" | cut -d ':' -f2))
+      #         echo "$folder=$coverage" >> $GITHUB_OUTPUT
+      #       done
+      #     else
+      #       echo no_testing="===== no changed module(s) which needs to test has been found =====" >> $GITHUB_OUTPUT
+      #     fi
+      #   id: get-app-testing
+            
+      # - name: find average coverage
+      #   run: |
+      #     melos testCoverageAverage
+      #     echo "coverage_average=$(cat coverage_average)" >> $GITHUB_OUTPUT
+      #   id: get-app-coverage-average
+
+      # - name: upload artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #       name: coverage-details
+      #       path: ./modules/features/*/coverage
+      
+      # - name: Create comment
+      #   id: testing-result-comment
+      #   uses: peter-evans/create-or-update-comment@v2
+      #   with:
+      #     issue-number: ${{ needs.setup.outputs.issue_number }}
+      #     body: |
+      #       #Job Summary
+            
+      #       ```
+      #       ${{steps.get-app-coverage-average.outputs.coverage_average}}
+      #       ```
+            
+      #       ${{ toJson(steps.get-app-testing.outputs.*) }}
+            
+
+      #       for further detail you can check this action summary
+      #       https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  deploy:
+    needs: [setup, testing]
+    if: ${{ contains(fromJson('["/build", "/release"]'), needs.setup.outputs.action) && contains(needs.testing.result , 'success') }}
+    strategy:
+      matrix:
+        build_options: ${{ fromJSON(needs.setup.outputs.build_options) }}
+
+    env:
+      artifact_type: ${{ matrix.build_options.artifact }}
+      engine: ${{ matrix.build_options.engine }}
+      flavor: ${{ matrix.build_options.flavor }}
+      build_mode: ${{ matrix.build_options.mode }}
+
+    runs-on: ubuntu-latest
+    
+    # outputs:
+    #   build_code: ${{ steps.get-variables.outputs.build_code }}
+    #   app_id: ${{ steps.get-variables.outputs.app_id }}
+
+    steps:
+      - name: setup branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.setup.outputs.head_ref }}
+      
+      - name: Setup SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_KEY }}
+      
+      - name: Setup Keystore
+        working-directory: ./app
+        run: |
+          mkdir -p android/app/keys
+          echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 --decode > android/app/keys/thoughtlab-debug.jks
+          echo "${{ secrets.DEBUG_KEY_PROPERTIES }}" | base64 --decode > android/debug-key.properties
+          echo "${{ secrets.PROD_KEYSTORE }}" | base64 --decode > android/app/keys/thoughtlab.jks
+          echo "${{ secrets.PROD_KEY_PROPERTIES }}" | base64 --decode > android/key.properties
+      
+      - name: setup java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "zulu"
+          java-version: "12.x"
+          cache: 'gradle'
+
+      - name: setup flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ needs.setup.outputs.flutter_version }}
+          cache: true
+            
+      - name: install firebase cli
+        run: curl -sL https://firebase.tools | bash
+            
+      - name: setup variables
+        id: get-variables
+        run: |
+          if [[ $flavor = 'production' ]]; then
+            echo '===== running setup variables for flavor production ====='
+            echo "app_id=1:381838149860:android:282e497dae910ce57644f1" >> $GITHUB_OUTPUT
+            echo "build_code=12" >> $GITHUB_OUTPUT
+          elif [[ $flavor = 'staging' ]]; then
+            echo '===== running setup variables for flavor staging ====='
+            echo "app_id=1:381838149860:android:dac0e1845db3e9107644f1" >> $GITHUB_OUTPUT
+            echo "build_code=11" >> $GITHUB_OUTPUT
+          else
+            echo '===== running setup variables for flavor dev ====='
+            echo "build_code=10" >> $GITHUB_OUTPUT
+            echo "app_id=1:381838149860:android:7d3baffce73b6dc37644f1" >> $GITHUB_OUTPUT
+          fi
+
+      - name: dump
+        run: |
+          echo $engine $flavor $artifact_type $build_mode
+
+      # - name: Build Debug Apk
+      #   if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}
+      #   working-directory: ./app
+      #   run: flutter build apk --flavor $flavor --dart-define=showMonitoring=true --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
+      
+      # - name: Build Release Apk
+      #   if: ${{ env.artifact_type == 'apk' && env.build_mode == 'release' }}
+      #   working-directory: ./app
+      #   run: flutter build apk --obfuscate --split-debug-info=build/debug_symbols --flavor $flavor --build-number=${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}
+      
+      # - name: Deploy APK ${{ env.flavor }} ${{ env.build_mode }} to The Firebase App Distribution for internal testing
+      #   if: ${{ env.artifact_type == 'apk' }}
+      #   uses: wzieba/Firebase-Distribution-Github-Action@v1
+      #   with:
+      #     appId: ${{ steps.get-variables.outputs.app_id }}
+      #     token: ${{ secrets.FIREBASE_TOKEN }}
+      #     groups: mitra-testers
+      #     file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
+      
+      ## running when build is --release and flavor is staging, deploy to firebase
+      # - name: Deploy APK staging release to The Firebase App Distribution for field trainers
+      #   if: ${{ env.artifact_type == 'apk' && env.flavor == 'staging' && env.build_mode == 'release' }}
+      #   uses: wzieba/Firebase-Distribution-Github-Action@v1
+      #   with:
+      #     appId: ${{ steps.get-variables.outputs.app_id }}
+      #     token: ${{ secrets.FIREBASE_TOKEN }}
+      #     groups: field-trainers
+      #     file: ./app/build/app/outputs/flutter-apk/app-${{ env.flavor }}-release.apk 
+      
+      # - name: notify on deploy
+      #   id: notify-deploy
+      #   if: ${{ success() && env.artifact_type == 'apk' }}
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     payload: |
+      #       {
+      #         "text": "Build ${{ needs.setup.outputs.app_version }} ${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }} is deployed to ${{ env.flavor }}.",
+      #         "blocks": [
+      #           {
+      #             "type": "section",
+      #             "text": {
+      #               "text": "*Build ${{ needs.setup.outputs.app_version }} ${{ format('{0}{1}', steps.get-variables.outputs.build_code, github.run_number) }}* is deployed to *${{ env.flavor }}*.\n:link: Direct to <https://appdistribution.firebase.google.com/testerapps/${{ needs.deploy.outputs.app_id}}|App Tester>.",
+      #               "type": "mrkdwn"
+      #             }
+      #           },
+      #           {
+      #             "type": "context",
+      #             "elements": [
+      #               {
+      #                 "type": "image",
+      #                 "image_url": "https://firebasestorage.googleapis.com/v0/b/agriaku-mitra.appspot.com/o/agriaku_logo.jpeg?alt=media&token=d055b273-2def-43cd-971b-62c14305ac74",
+      #                 "alt_text": "agriaku logo"
+      #               },
+      #               {
+      #                 "type": "mrkdwn",
+      #                 "text": "${{ needs.setup.outputs.head_ref }} → ${{ needs.setup.outputs.base_ref }}"
+      #               }
+      #             ]
+      #           },
+      #           {
+      #             "type": "context",
+      #             "elements": [
+      #               {
+      #                 "type": "plain_text",
+      #                 "text": ":hammer_and_wrench: ${{ env.build_mode }}"
+      #               }
+      #             ]
+      #           }
+      #         ]
+      #       }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+      
+      ## running when build is --release and flavor is production, generate aab file and upload to playstore
+      # - name: Build AppBundle
+      #   if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
+      #   working-directory: ./app
+      #   run: flutter build appbundle --obfuscate --split-debug-info=build/debug_symbols --flavor $flavor
+
+      # - name: Save AAB Artifact
+      #   if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
+      #   uses: actions/upload-artifact@v1
+      #   with:
+      #     name: ${{ format('release-{0}', github.run_number) }}
+      #     path: ./app/build/app/outputs/bundle/productionRelease/app-${{ env.flavor }}-${{ env.build_mode }}.aab
+      
+      # - name: release draft to playstore
+      #   id: release-playstore
+      #   if: ${{ env.artifact_type == 'appbundle' && env.flavor == 'production' && env.build_mode == 'release' }}
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+      #     packageName: com.agriaku.mitra
+      #     track: production
+      #     status: draft
+      #     releaseFiles: ./app/build/app/outputs/bundle/productionRelease/app-${{ env.flavor }}-${{ env.build_mode }}.aab
+      #     mappingFile: ./app/build/app/outputs/mapping/${{ env.flavor }}Release/mapping.txt
+      #     debugSymbols: ./app/build/app/intermediates/merged_native_libs/productionRelease/out/lib
+
+      # - name: Upload Debug Symbols
+      #   if: ${{ env.build_mode == 'release' }}
+      #   run: firebase crashlytics:symbols:upload --app=${{ steps.get-variables.outputs.app_id }} app/build/debug_symbols --token ${{ secrets.FIREBASE_TOKEN }}
+
+        
