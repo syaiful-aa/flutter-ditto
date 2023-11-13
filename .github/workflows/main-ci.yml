@@ -204,9 +204,9 @@ jobs:
 
     env:
       artifact_type: ${{ matrix.build_options.artifact }}
-      engine: ${{ matrix.build_options.engine }}
       flavor: ${{ matrix.build_options.flavor }}
       build_mode: ${{ matrix.build_options.mode }}
+      engine: ${{ needs.setup.outputs.engine }}
 
     runs-on: ubuntu-latest
     
