@@ -59,7 +59,7 @@ class _MainAppState extends State<MainApp> {
           children: [
             Center(
               child: Text(
-                "Logger status: ${_isLoggerEnabled ? 'enabled' : 'disabled'}",
+                "Logger Status: ${_isLoggerEnabled ? 'enabled' : 'disabled'}",
               ),
             ),
             Positioned(
