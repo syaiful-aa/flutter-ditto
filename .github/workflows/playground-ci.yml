@@ -101,6 +101,7 @@ jobs:
       - name: process output
         run: |
           echo "${{ steps.compare-coverage.outputs.result }}"
+          echo "${{ steps.compare-coverage.outputs.result_raw }}"
 
       # - name: compare testing result with last release
       #   id: compare-coverage
