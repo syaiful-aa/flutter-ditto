@@ -88,9 +88,8 @@ jobs:
           -X PATCH \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
-          https://api.github.com/repos/${{ github.repository }}/actions/variables/last_release_test_report \
+          https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_RELEASE_TEST_REPORT \
           -d '{
-              "name":"last_release_test_report",
               "value":"aaa"
             }'
 
