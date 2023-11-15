@@ -101,7 +101,8 @@ jobs:
       - name: process output
         run: |
           echo "${{ steps.compare-coverage.outputs.result }}"
-          echo "${{ toJson(steps.compare-coverage.outputs.result) }}"
+          echo "${{ steps.compare-coverage.outputs.result.current_version }}"
+          # echo "${{ toJson(steps.compare-coverage.outputs.result) }}"
 
           echo "----"
 
