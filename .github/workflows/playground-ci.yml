@@ -54,11 +54,24 @@ jobs:
           echo "shopping_list_module=shopping_list_module : 91.6% (1018 of 1111 lines)" >> $GITHUB_OUTPUT
           echo "transaction_module=transaction_module : 73.5% (1839 of 2502 lines)" >> $GITHUB_OUTPUT
 
+          echo "release_version : 2.19.0" >> coverage_current
+          echo "agriaku_coin : 46.3% (62 of 134 lines)" >> coverage_current
+          echo "agriaku_mitra : 100.0% (11 of 11 lines)" >> coverage_current
+          echo "authentication_module : 94.5% (1109 of 1173 lines)" >> coverage_current
+          echo "discovery_module : 84.8% (1063 of 1254 lines)" >> coverage_current
+          echo "domain_module : 29.6% (270 of 911 lines)" >> coverage_current
+          echo "mitra_datasource : 27.5% (520 of 1891 lines)" >> coverage_current
+          echo "product_module : 81.9% (1340 of 1637 lines)" >> coverage_current
+          echo "review_module : 99.8% (428 of 429 lines)" >> coverage_current
+          echo "shopping_list_module : 91.6% (1018 of 1111 lines)" >> coverage_current
+          echo "transaction_module : 73.5% (1839 of 2502 lines)" >> coverage_current
+
       - name: find average coverage
         id: get-app-coverage-average
         run: |
           echo "coverage_average=none" >> $GITHUB_OUTPUT
-        
+          echo "average_coverage : 99% (9999 of 9999 lines)" >> coverage_current
+
       - name: create comment
         id: testing-result-comment
         uses: peter-evans/create-or-update-comment@v2
@@ -80,27 +93,34 @@ jobs:
       - name: compare testing result with last release
         id: compare-coverage
         run: |
-          echo "${{ vars.last_release_test_report }}" | base64 --decode
-          echo "updated_value=$(cat OUTPUT | base64)" >> $GITHUB_OUTPUT
+          # load previous report
+          echo "${{ vars.last_release_test_report }}" | base64 --decode > coverage_previous
+          cat coverage_previous
+
+          # assign current release coverage to step outputs
+          echo "updated_value=$(cat coverage_current | base64)" >> $GITHUB_OUTPUT
           
+          # compare
+
+          # assign comparison result to step outputs
           delimiter="$(openssl rand -hex 8)"
           echo "result<<${delimiter}" >> "${GITHUB_OUTPUT}"
           echo "$(cat coverage_comparison)" >> "${GITHUB_OUTPUT}"
           echo "${delimiter}" >> "${GITHUB_OUTPUT}"
 
-      - name: create comment
-        id: testing-comparison-comment
+      - name: create coverage comparison comment
+        id: coverage-comparison-comment
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ steps.get-pr-details.outputs.number }}
           body: |
-            #Coverage Comparison
+            ## Coverage Comparison
             
             ```
             ${{steps.compare-coverage.outputs.result}}
             ```
 
-      - name: update current result
+      - name: update latest release report
         run: |
           curl -L \
           -X PATCH \
@@ -111,15 +131,6 @@ jobs:
               "value":"${{ steps.compare-coverage.outputs.updated_value }}"
             }'
 
-      - name: last
-        run: |
-          delimiter="$(openssl rand -hex 8)"
-          echo "result<<${delimiter}" >> "${GITHUB_OUTPUT}"
-          echo "$(cat OUTPUT)" >> "${GITHUB_OUTPUT}"
-          echo "${delimiter}" >> "${GITHUB_OUTPUT}"
-          echo "---"
-          cat $GITHUB_OUTPUT
-          
  
           
 
