@@ -81,17 +81,19 @@ jobs:
         id: compare
         run: |
           echo "${{ vars.last_release_test_report }}" | base64 --decode
+          echo "updated_value=$(cat OUTPUT | base64)" >> $GITHUB_OUTPUT
 
       - name: update current result
         run: |
           new_value="$(cat OUTPUT | base64)"
+          echo $newValue
           curl -L \
           -X PATCH \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
           https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_RELEASE_TEST_REPORT \
           -d '{
-              "value":"$new_value"
+              "value":"${{ steps.compare.outputs.updated_value }}"
             }'
 
       - name: last
