@@ -5,12 +5,7 @@ on:
     types:
       - created
 
-permissions:
-  actions: write
-  issues: write
-  checks: write
-  statuses: write
-  discussions: write
+permissions: write-all
 
 jobs:
   setup:
