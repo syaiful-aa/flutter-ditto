@@ -50,8 +50,6 @@ jobs:
         id: get-app-coverage-average
         run: |
           echo "${{ toJson(steps.get-app-testing.outputs.*) }}" >> OUTPUT
-          echo "${{ toJson(steps.get-app-testing.outputs) }}" >> OUTPUT
-          echo "${{ fromJson(steps.get-app-testing.outputs) }}" >> OUTPUT
           cat OUTPUT
           echo "==="
           echo "coverage_average=none" >> $GITHUB_OUTPUT
