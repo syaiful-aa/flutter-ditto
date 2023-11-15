@@ -78,10 +78,27 @@ jobs:
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: compare testing result with last release
-        id: compare
+        id: compare-coverage
         run: |
           echo "${{ vars.last_release_test_report }}" | base64 --decode
           echo "updated_value=$(cat OUTPUT | base64)" >> $GITHUB_OUTPUT
+          
+          delimiter="$(openssl rand -hex 8)"
+          echo "result<<${delimiter}" >> "${GITHUB_OUTPUT}"
+          echo "$(cat coverage_comparison)" >> "${GITHUB_OUTPUT}"
+          echo "${delimiter}" >> "${GITHUB_OUTPUT}"
+
+      - name: create comment
+        id: testing-comparison-comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ steps.get-pr-details.outputs.number }}
+          body: |
+            #Coverage Comparison
+            
+            ```
+            ${{steps.compare-coverage.outputs.result}}
+            ```
 
       - name: update current result
         run: |
@@ -91,7 +108,7 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
           https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_RELEASE_TEST_REPORT \
           -d '{
-              "value":"${{ steps.compare.outputs.updated_value }}"
+              "value":"${{ steps.compare-coverage.outputs.updated_value }}"
             }'
 
       - name: last
