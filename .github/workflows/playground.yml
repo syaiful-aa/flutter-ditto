@@ -78,8 +78,10 @@ jobs:
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: compare testing result with last release
+        id: compare
         run: |
           echo "${{ vars.last_release_test_report }}"
+          echo "report=$(cat OUTPUT)" >> $GITHUB_OUTPUT
 
       - name: update current result
         run: |
@@ -88,12 +90,14 @@ jobs:
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
           https://api.github.com/repos/${{ github.repository }}/actions/variables/last_release_test_report \
-          -d '${{ toJson(steps.get-app-testing.outputs.*) }}'
+          -d '${{ toJson(steps.compare.outputs.report) }}'
 
       - name: last
         run: |
-          echo "${{ steps.get-app-testing.outputs.* }}" >> OUTPUT
-          cat OUTPUT
+          for module in ${{ steps.get-app-testing.outputs.* }}
+            echo $module
+          do
+          done
           
  
           
