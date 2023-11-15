@@ -116,6 +116,9 @@ jobs:
           
       - name: process output 2
         run: |
+          echo "${{ steps.process-output.outputs.current_rx }}"
+          echo "${{ fromJson(steps.process-output.outputs.current_rx) }}"
+
           for object in "${{ fromJson(steps.process-output.outputs.current_rx) }}"; do
             covered_lines=$(echo $object | jq -r '.covered_lines')
             total_lines=$(echo $object | jq -r '.total_lines')
