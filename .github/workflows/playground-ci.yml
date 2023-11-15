@@ -106,6 +106,9 @@ jobs:
           echo "${{ steps.compare-coverage.outputs.current_summary }}"
           echo "${{ steps.compare-coverage.outputs.current_result }}"
 
+          echo "${{ fromJson(steps.compare-coverage.outputs.current_summary).percentage }}"
+
+
 
 
 
