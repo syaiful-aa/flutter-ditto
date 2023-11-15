@@ -100,7 +100,7 @@ jobs:
 
       - name: process output
         env:
-          current_summary: ${{ fromJson(steps.compare-coverage.outputs.current_summary) }}
+          current_summary: ${{ steps.compare-coverage.outputs.current_summary }}
         run: |
           echo "${{ steps.compare-coverage.outputs.previous_version }}"
           echo "${{ steps.compare-coverage.outputs.current_version }}"
@@ -110,7 +110,7 @@ jobs:
 
           echo "${{ fromJson(steps.compare-coverage.outputs.current_summary).percentage }}"
 
-          echo "${{ env.current_summary.covered_lines }} / ${{ env.current_summary.total_lines }}"
+          echo "${{ env.current_summary.covered_lines }} / ${{ fromJson(env.current_summary).total_lines }}"
 
 
 
