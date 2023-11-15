@@ -100,8 +100,8 @@ jobs:
           # assign current release coverage to step outputs
           cat coverage_current
           cat coverage_current | base64 > coverage_current_formatted
-          echo $coverage_current_formatted
-          echo "updated_value=$coverage_current_formatted" >> $GITHUB_OUTPUT
+          cat coverage_current_formatted
+          echo "updated_value=$(cat coverage_current_formatted)" >> $GITHUB_OUTPUT
           
           # compare
 
