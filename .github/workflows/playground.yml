@@ -81,8 +81,6 @@ jobs:
         id: compare
         run: |
           echo "${{ vars.last_release_test_report }}"
-          # report=$(cat OUTPUT)
-          # echo "report=$report" >> $GITHUB_OUTPUT
 
       - name: update current result
         run: |
@@ -91,7 +89,7 @@ jobs:
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
           https://api.github.com/repos/${{ github.repository }}/actions/variables/last_release_test_report \
-          -d 'aaa'
+          -d '{"name":"USERNAME","value":"octocat"}'
 
       - name: last
         run: |
