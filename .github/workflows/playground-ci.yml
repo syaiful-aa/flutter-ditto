@@ -101,10 +101,7 @@ jobs:
           cat coverage_current
           cat coverage_current | base64 > coverage_current_formatted
           cat coverage_current_formatted
-          delimiter="$(openssl rand -hex 8)"
-          echo "updated_value<<${delimiter}" >> "${GITHUB_OUTPUT}"
-          echo "$(cat coverage_current_formatted)" >> "${GITHUB_OUTPUT}"
-          echo "${delimiter}" >> "${GITHUB_OUTPUT}"
+          echo "updated_value=$(cat coverage_current_formatted | tr -d '[:space:]')" >> $GITHUB_OUTPUT
 
           # compare
 
