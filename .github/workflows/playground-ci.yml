@@ -130,6 +130,7 @@ jobs:
         run: |
           # updated_value="$(cat coverage_current | base64)"
           # echo $updated_value
+          echo ${{ steps.compare-coverage.outputs.updated_value }}
           
           curl -L \
           -X PATCH \
