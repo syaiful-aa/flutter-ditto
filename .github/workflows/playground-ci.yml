@@ -100,17 +100,20 @@ jobs:
 
       - name: process output
         run: |
+          echo "${{ toJson(steps.compare-coverage.outputs.*) }}"
+         
           echo "${{ steps.compare-coverage.outputs.result }}"
           echo "${{ toJson(steps.compare-coverage.outputs.result) }}"
 
-          echo "${{ steps.compare-coverage.outputs.result.current_version }}"
-          echo "${{ toJson(steps.compare-coverage.outputs.result.current_version) }}"
+          echo "----"
 
-          for module in ${{ toJson(steps.compare-coverage.outputs.result.previous_result) }}
-          do
-            echo ${module[module]}
-            echo ${module[result]}
-          done
+          echo "${{ toJson(steps.compare-coverage.outputs.result).current_version }}"
+
+          echo "${{ steps.compare-coverage.outputs.result.previous_result.*.module }}"
+
+          build_options=$(jq -r -c . <<< "${{ toJson(steps.compare-coverage.outputs.result.previous_result) }}")
+          echo $build_options
+
 
 
 
