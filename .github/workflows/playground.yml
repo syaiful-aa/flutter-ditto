@@ -8,12 +8,7 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    if: |
-      github.event.issue.pull_request && 
-      ( startsWith(github.event.comment.body, '/test') ||
-      startsWith(github.event.comment.body, '/build') ||
-      startsWith(github.event.comment.body, '/release') ||
-      startsWith(github.event.comment.body, '/patch') )
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/fire') 
     steps:
       - name: Dump GitHub context
         env:
