@@ -89,14 +89,18 @@ jobs:
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
           https://api.github.com/repos/${{ github.repository }}/actions/variables/last_release_test_report \
-          -d '{"name":"USERNAME","value":"octocat"}'
+          -d '{
+              "name":"last_release_test_report",
+              "value":"aaa"
+            }'
 
       - name: last
         run: |
-          for module in ${{ steps.get-app-testing.outputs.* }}
-          do
-            echo "$module"
-          done
+          delimiter="$(openssl rand -hex 8)"
+          echo "result<<${delimiter}" >> "${GITHUB_OUTPUT}"
+          echo "$(cat OUTPUT)" >> "${GITHUB_OUTPUT}"
+          echo "${delimiter}" >> "${GITHUB_OUTPUT}"
+          cat $GITHUB_OUTPUT
           
  
           
