@@ -47,7 +47,7 @@ jobs:
       - name: find average coverage
         id: get-app-coverage-average
         run: |
-          for module in ${{ toJson(steps.get-app-testing.outputs.*) }}
+          for module in ${{ toJson(steps.get-app-testing.outputs) }}
           do
             echo "$module"
           done
