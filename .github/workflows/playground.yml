@@ -5,15 +5,12 @@ on:
     types:
       - created
 
+permissions: write-all
+
 jobs:
   setup:
     runs-on: ubuntu-latest
-    if: |
-      github.event.issue.pull_request && 
-      ( startsWith(github.event.comment.body, '/test') ||
-      startsWith(github.event.comment.body, '/build') ||
-      startsWith(github.event.comment.body, '/release') ||
-      startsWith(github.event.comment.body, '/patch') )
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/fire') 
     steps:
       - name: Dump GitHub context
         env:
@@ -25,20 +22,27 @@ jobs:
       - name: get pull request metadata
         uses: xt0rted/pull-request-comment-branch@v1
         id: comment-branch
+
       - name: get PR details
         uses: 8BitJonny/gh-get-current-pr@2.1.3
         id: get-pr-details
         with:
           github-token: ${{ github.token }}
           sha: ${{ steps.comment-branch.outputs.head_sha }}
+
       - name: setup branch
         uses: actions/checkout@v3
         with:
           ref: ${{ steps.comment-branch.outputs.head_ref }}
+
+      - name: Setup SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.CI_SSH_KEY }}
+
       - name: simulate test
         id: get-app-testing
         run: |
-          echo "$folder=$coverage" >> $GITHUB_OUTPUT
           echo "agriaku_coin=agriaku_coin : 46.3% (62 of 134 lines)" >> $GITHUB_OUTPUT
           echo "agriaku_mitra=agriaku_mitra : 100.0% (11 of 11 lines)" >> $GITHUB_OUTPUT
           echo "authentication_module=authentication_module : 94.5% (1109 of 1173 lines)" >> $GITHUB_OUTPUT
@@ -53,10 +57,6 @@ jobs:
       - name: find average coverage
         id: get-app-coverage-average
         run: |
-          for module in ${{ toJson(steps.get-app-testing.outputs.*) }}
-          do
-            echo "$module"
-          done
           echo "coverage_average=none" >> $GITHUB_OUTPUT
         
       - name: create comment
@@ -78,17 +78,28 @@ jobs:
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: compare testing result with last release
+        id: compare
         run: |
           echo "${{ vars.last_release_test_report }}"
+          report=$(cat OUTPUT)
+          echo "report=$report" >> $GITHUB_OUTPUT
 
       - name: update current result
         run: |
           curl -L \
           -X PATCH \
           -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/OWNER/REPO/actions/variables/last_release_test_report \
-          -d '${{ steps.get-app-testing.outputs}}'
+          -H "Authorization: Bearer ${{ secrets.PAT }}" \
+          https://api.github.com/repos/${{ github.repository }}/actions/variables/last_release_test_report \
+          -d 'aaa'
+
+      - name: last
+        run: |
+          for module in ${{ steps.get-app-testing.outputs.* }}
+          do
+            echo "$module"
+          done
+          
  
           
 
