@@ -84,7 +84,7 @@ jobs:
 
       - name: update current result
         run: |
-          new_value="$(base64 OUTPUT)"
+          new_value="$(cat OUTPUT | base64)"
           curl -L \
           -X PATCH \
           -H "Accept: application/vnd.github+json" \
