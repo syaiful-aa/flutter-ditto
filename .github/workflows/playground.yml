@@ -33,7 +33,6 @@ jobs:
       - name: simulate test
         id: get-app-testing
         run: |
-          echo "$folder=$coverage" >> $GITHUB_OUTPUT
           echo "agriaku_coin=agriaku_coin : 46.3% (62 of 134 lines)" >> $GITHUB_OUTPUT
           echo "agriaku_mitra=agriaku_mitra : 100.0% (11 of 11 lines)" >> $GITHUB_OUTPUT
           echo "authentication_module=authentication_module : 94.5% (1109 of 1173 lines)" >> $GITHUB_OUTPUT
