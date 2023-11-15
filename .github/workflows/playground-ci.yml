@@ -85,9 +85,6 @@ jobs:
 
       - name: update current result
         run: |
-          new_value="$(cat OUTPUT | base64)"
-          echo $new_value
-          echo "updated: ${{ steps.compare.outputs.updated_value }}"
           curl -L \
           -X PATCH \
           -H "Accept: application/vnd.github+json" \
