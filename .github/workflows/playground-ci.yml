@@ -109,8 +109,12 @@ jobs:
           echo "${{ steps.compare-coverage.outputs.current_result }}"
 
           echo "${{ fromJson(steps.compare-coverage.outputs.current_summary).percentage }}"
+          echo "${{ fromJson(env.current_summary).covered_lines }} / ${{ fromJson(env.current_summary).total_lines }}"
 
-          echo "${{ env.current_summary.covered_lines }} / ${{ fromJson(env.current_summary).total_lines }}"
+          for object in ${{ fromJson(steps.compare-coverage.outputs.current_result) }}; do
+            covered_lines=$(echo $object | jq -r '.covered_lines')
+            echo $covered_lines
+          done
 
 
 
