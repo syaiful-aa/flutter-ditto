@@ -115,13 +115,13 @@ jobs:
           current_result=$(jq -r -c . <<< "${{ toJson(steps.compare-coverage.outputs.current_result) }}") 
           echo $current_result
 
-          echo "current_rx=$(jq -r -c . <<< "${{ toJson(steps.compare-coverage.outputs.current_result) }}")" >> $GITHUB_OUTPUT
-          echo $current_rx
+          # echo "current_rx=$(jq -r -c . <<< "${{ toJson(steps.compare-coverage.outputs.current_result) }}")" >> $GITHUB_OUTPUT
+          # echo $current_rx
           
-          for object in ${{ fromJson(env.current_result) }}; do
-            covered_lines=$(echo $object | jq -r '.covered_lines')
-            echo $covered_lines
-          done
+          # for object in ${{ fromJson(env.current_result) }}; do
+          #   covered_lines=$(echo $object | jq -r '.covered_lines')
+          #   echo $covered_lines
+          # done
 
 
 
