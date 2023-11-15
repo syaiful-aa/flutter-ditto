@@ -106,7 +106,7 @@ jobs:
           echo "----"
 
           echo "${{ toJson(steps.compare-coverage.outputs.result.current_version) }}"
-          echo "${{ fromJson(steps.compare-coverage.outputs.result.previous_result) }}"
+          # echo "${{ fromJson(steps.compare-coverage.outputs.result.previous_result) }}"
 
 
       # - name: compare testing result with last release
