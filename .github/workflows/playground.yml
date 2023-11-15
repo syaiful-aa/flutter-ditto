@@ -49,9 +49,9 @@ jobs:
       - name: find average coverage
         id: get-app-coverage-average
         run: |
-          echo ${{ fromJson(steps.get-app-testing.outputs) }}
+          echo ${{ toJson(steps.get-app-testing.outputs) }}
           echo "==="
-          echo ${{ fromJson(steps.get-app-testing.outputs) }} > OUTPUT
+          echo ${{ toJson(steps.get-app-testing.outputs) }} > OUTPUT
           echo $(cat OUTPUT)
           echo "==="
           echo "coverage_average=none" >> $GITHUB_OUTPUT
