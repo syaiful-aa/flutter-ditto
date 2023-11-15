@@ -100,13 +100,13 @@ jobs:
 
       - name: process output
         run: |
-          echo "${{ steps.parse-input.outputs.result }}"
-          echo "${{ toJson(steps.parse-input.outputs.result) }}"
+          echo "${{ steps.compare-coverage.outputs.result }}"
+          echo "${{ toJson(steps.compare-coverage.outputs.result) }}"
 
-          echo "${{ steps.parse-input.outputs.result.current_version }}"
-          echo "${{ toJson(steps.parse-input.outputs.result.current_version) }}"
+          echo "${{ steps.compare-coverage.outputs.result.current_version }}"
+          echo "${{ toJson(steps.compare-coverage.outputs.result.current_version) }}"
 
-          for module in ${{ toJson(steps.parse-input.outputs.result.previous_result) }}
+          for module in ${{ toJson(steps.compare-coverage.outputs.result.previous_result) }}
           do
             echo ${module[module]}
             echo ${module[result]}
