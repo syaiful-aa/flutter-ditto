@@ -100,19 +100,13 @@ jobs:
 
       - name: process output
         run: |
-         
           echo "${{ steps.compare-coverage.outputs.result }}"
           echo "${{ toJson(steps.compare-coverage.outputs.result) }}"
 
           echo "----"
 
           echo "${{ toJson(steps.compare-coverage.outputs.result.current_version) }}"
-
-          echo "${{ fromJson(steps.compare-coverage.outputs.result.previous_result.*.module) }}"
-
-        
-
-
+          echo "${{ fromJson(steps.compare-coverage.outputs.result.previous_result) }}"
 
 
       # - name: compare testing result with last release
