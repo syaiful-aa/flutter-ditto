@@ -70,7 +70,7 @@ jobs:
         id: get-app-coverage-average
         run: |
           echo "coverage_average=none" >> $GITHUB_OUTPUT
-          echo "average_coverage : 99% (9999 of 9999 lines)" >> coverage_current
+          echo -n "average_coverage : 99% (9999 of 9999 lines)" >> coverage_current
 
       - name: create comment
         id: testing-result-comment
@@ -99,7 +99,7 @@ jobs:
 
           # assign current release coverage to step outputs
           cat coverage_current
-          # echo "updated_value=$(cat coverage_current | base64)" >> $GITHUB_OUTPUT
+          echo "updated_value=$(cat coverage_current | base64)" >> $GITHUB_OUTPUT
           
           # compare
 
@@ -123,17 +123,17 @@ jobs:
 
       - name: update latest release report
         run: |
-          updated_value="$(cat coverage_current | base64)"
-          echo $updated_value
+          # updated_value="$(cat coverage_current | base64)"
+          # echo $updated_value
           
           curl -L \
           -X PATCH \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
           https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_RELEASE_TEST_REPORT \
-          -d "{
-              \"value\": \"$updated_value\"
-            }"
+          -d '{
+              "value":"${{ steps.compare-coverage.outputs.updated_value }}"
+            }'
 
  
           
