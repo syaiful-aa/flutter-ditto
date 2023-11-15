@@ -99,7 +99,7 @@ jobs:
 
           # assign current release coverage to step outputs
           cat coverage_current
-          echo "updated_value=$(cat coverage_current | base64)" >> $GITHUB_OUTPUT
+          # echo "updated_value=$(cat coverage_current | base64)" >> $GITHUB_OUTPUT
           
           # compare
 
@@ -123,13 +123,16 @@ jobs:
 
       - name: update latest release report
         run: |
+          updated_value="$(cat coverage_current | base64)"
+          echo $updated_value
+          
           curl -L \
           -X PATCH \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
           https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_RELEASE_TEST_REPORT \
           -d '{
-              "value":"${{ steps.compare-coverage.outputs.updated_value }}"
+              "value":"${updated_value}"
             }'
 
  
