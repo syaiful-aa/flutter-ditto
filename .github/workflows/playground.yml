@@ -88,11 +88,11 @@ jobs:
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.PAT }}" \
           https://api.github.com/repos/${{ github.repository }}/actions/variables/last_release_test_report \
-          -d '${{ steps.get-app-testing.outputs}}'
+          -d '${{ toJson(steps.get-app-testing.outputs.*) }}'
 
       - name: last
         run: |
-          echo "${{ steps.get-app-testing.outputs }}" >> OUTPUT
+          echo "${{ steps.get-app-testing.outputs.* }}" >> OUTPUT
           cat OUTPUT
           
  
