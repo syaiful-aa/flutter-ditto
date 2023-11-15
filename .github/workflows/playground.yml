@@ -81,8 +81,8 @@ jobs:
         id: compare
         run: |
           echo "${{ vars.last_release_test_report }}"
-          report=$(cat OUTPUT)
-          echo "report=$report" >> $GITHUB_OUTPUT
+          # report=$(cat OUTPUT)
+          # echo "report=$report" >> $GITHUB_OUTPUT
 
       - name: update current result
         run: |
