@@ -10,6 +10,7 @@ permissions:
   issues: write
   checks: write
   statuses: write
+  discussions: write
 
 jobs:
   setup:
