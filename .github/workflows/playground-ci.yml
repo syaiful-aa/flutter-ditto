@@ -112,17 +112,11 @@ jobs:
           echo "${{ fromJson(steps.compare-coverage.outputs.current_summary).percentage }}"
           echo "${{ fromJson(env.current_summary).covered_lines }} / ${{ fromJson(env.current_summary).total_lines }}"
 
-          current_result=$(jq -r -c . <<< "${{ toJson(steps.compare-coverage.outputs.current_result) }}") 
-          echo $current_result
-
-          # echo "current_rx=$(jq -r -c . <<< "${{ toJson(steps.compare-coverage.outputs.current_result) }}")" >> $GITHUB_OUTPUT
-          # echo $current_rx
+          echo "current_rx=$(jq -r -c . <<< "${{ toJson(steps.compare-coverage.outputs.current_result) }}")" >> $GITHUB_OUTPUT
           
-          # for object in ${{ fromJson(env.current_result) }}; do
-          #   covered_lines=$(echo $object | jq -r '.covered_lines')
-          #   echo $covered_lines
-          # done
-
+      - name: process output 2
+        run: |
+          echo "${{ fromJson(steps.process-output.outputs.current_rx) }}"
 
 
 
