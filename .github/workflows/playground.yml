@@ -99,6 +99,7 @@ jobs:
           echo "result<<${delimiter}" >> "${GITHUB_OUTPUT}"
           echo "$(cat OUTPUT)" >> "${GITHUB_OUTPUT}"
           echo "${delimiter}" >> "${GITHUB_OUTPUT}"
+          echo "---"
           cat $GITHUB_OUTPUT
           
  
