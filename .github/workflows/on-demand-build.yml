@@ -130,7 +130,7 @@ jobs:
       
   deploy:
     needs: [setup, testing]
-    if: ${{ always() && (contains(needs.testing.result , 'success') || inputs.run-test == false) }}
+    if: ${{ always() && contains(needs.setup.result, 'success') && (contains(needs.testing.result, 'success') || inputs.run-test == false) }}
     env:
       artifact_type: ${{ inputs.artifact }}
       flavor: ${{ inputs.flavor }}
@@ -187,6 +187,7 @@ jobs:
         id: get-variables
         run: |
           build_code=""
+          build_number=""
           if [[ $flavor = 'production' ]]; then
             echo '===== running setup variables for flavor production ====='
             echo "app_id=1:381838149860:android:282e497dae910ce57644f1" >> $GITHUB_OUTPUT
@@ -201,8 +202,12 @@ jobs:
             build_code="10"
           fi
 
+          if [[ $engine = 'flutter' ]]; then
+            build_number="${build_code}${{ github.run_number }}"
+          fi
+
           echo "build_code=$build_code" >> $GITHUB_OUTPUT
-          echo "build_number=${build_code}${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "build_number=$build_number" >> $GITHUB_OUTPUT
 
       - name: Build Debug Apk
         if: ${{ env.artifact_type == 'apk' && env.build_mode == 'debug' }}
