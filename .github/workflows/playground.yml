@@ -20,12 +20,14 @@ jobs:
       - name: get pull request metadata
         uses: xt0rted/pull-request-comment-branch@v1
         id: comment-branch
+
       - name: get PR details
         uses: 8BitJonny/gh-get-current-pr@2.1.3
         id: get-pr-details
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ steps.comment-branch.outputs.head_sha }}
+
       - name: setup branch
         uses: actions/checkout@v3
         with:
@@ -47,9 +49,9 @@ jobs:
       - name: find average coverage
         id: get-app-coverage-average
         run: |
-          echo ${{ steps.get-app-testing.outputs }}
+          echo ${{ fromJson(steps.get-app-testing.outputs) }}
           echo "==="
-          echo ${{ steps.get-app-testing.outputs }} > OUTPUT
+          echo ${{ fromJson(steps.get-app-testing.outputs) }} > OUTPUT
           echo $(cat OUTPUT)
           echo "==="
           echo "coverage_average=none" >> $GITHUB_OUTPUT
