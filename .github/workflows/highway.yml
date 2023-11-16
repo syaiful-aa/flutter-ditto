@@ -17,7 +17,7 @@ jobs:
         run: |
           echo "current data:"
           echo "${{ vars.LAST_RELEASE_TEST_REPORT }}"
-          echo "result=$(cat INPUT | base64)" >> $GITHUB_OUTPUT
+          echo "result=$(cat INPUT)" >> $GITHUB_OUTPUT
       
       - name: update latest release report
         run: |
