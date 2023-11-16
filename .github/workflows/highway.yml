@@ -1,0 +1,39 @@
+name: Experiment - Highway
+
+on: push
+
+jobs:
+  woosh:
+    defaults:
+      run:
+        shell: bash
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup branch
+        uses: actions/checkout@v3
+
+      - name: set initial data
+        id: set-initial-data
+        run: |
+          echo "current data:"
+          echo "${{ vars.LAST_RELEASE_TEST_REPORT }}"
+          echo "result=$(cat INPUT | base64)" >> $GITHUB_OUTPUT
+      
+      - name: update latest release report
+        run: |
+          curl -L \
+          -X PATCH \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.PAT }}" \
+          https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_RELEASE_TEST_REPORT \
+          -d '{
+              "value":"${{ steps.set-initial-data.outputs.result }}"
+            }'
+
+      - name: check updated data
+        run: |
+          echo "updated data:"
+          echo "${{ vars.LAST_RELEASE_TEST_REPORT }}"
+
+
+      
