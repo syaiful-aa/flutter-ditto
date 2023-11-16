@@ -86,9 +86,13 @@ jobs:
           current_data: ${{ steps.get-app-testing.outputs.coverage_current }}
 
       - name: process output
+        id: process-output
         run: |
           echo "result"
-          echo ${{ steps.compare-coverage.outputs.comparison_result }} > xxx
+          delimiter="$(openssl rand -hex 8)"
+          echo "result<<${delimiter}" >> "${GITHUB_OUTPUT}"
+          echo "${{ steps.compare-coverage.outputs.comparison_result }}" >> "${GITHUB_OUTPUT}"
+          echo "${delimiter}" >> "${GITHUB_OUTPUT}"
   
       - name: find average coverage
         id: get-app-coverage-average
@@ -142,7 +146,7 @@ jobs:
             ## Coverage Comparison
             
             ```
-            ${{steps.compare-coverage.outputs.comparison_result}}
+            ${{steps.process-output.outputs.result}}
             ```
 
       - name: update latest release report
