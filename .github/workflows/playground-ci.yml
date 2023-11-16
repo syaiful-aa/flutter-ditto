@@ -74,7 +74,7 @@ jobs:
 
           echo "---"
 
-          coverage_previous=${{ vars.last_release_test_report }}
+          coverage_previous=${{ vars.LAST_RELEASE_TEST_REPORT }}
           echo "coverage_previous" 
           echo $coverage_previous
 
@@ -83,7 +83,7 @@ jobs:
         # uses: Agriaku/agriaku_app_actions/compare-coverage@v1.5.0
         uses: syaiful-aa/actions-experiment/compare-coverage@v3.4.0
         with:
-          previous_data: ${{ vars.last_release_test_report }}
+          previous_data: ${{ vars.LAST_RELEASE_TEST_REPORT }}
           current_data: ${{ steps.get-app-testing.coverage_current }}
 
       - name: process output
@@ -119,7 +119,7 @@ jobs:
       #   id: compare-coverage
       #   run: |
       #     # load previous report
-      #     echo "${{ vars.last_release_test_report }}" | base64 --decode > coverage_previous
+      #     echo "${{ vars.LAST_RELEASE_TEST_REPORT }}" | base64 --decode > coverage_previous
       #     cat coverage_previous
 
       #     # assign current release coverage to step outputs
