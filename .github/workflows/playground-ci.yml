@@ -145,16 +145,16 @@ jobs:
       #       ${{steps.compare-coverage.outputs.result}}
       #       ```
 
-      # - name: update latest release report
-      #   run: |
-      #     curl -L \
-      #     -X PATCH \
-      #     -H "Accept: application/vnd.github+json" \
-      #     -H "Authorization: Bearer ${{ secrets.PAT }}" \
-      #     https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_RELEASE_TEST_REPORT \
-      #     -d '{
-      #         "value":"${{ steps.compare-coverage.outputs.updated_value }}"
-      #       }'
+      - name: update latest release report
+        run: |
+          curl -L \
+          -X PATCH \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.PAT }}" \
+          https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_RELEASE_TEST_REPORT \
+          -d '{
+              "value":"${{ steps.get-app-testing.outputs.coverage_current }}"
+            }'
 
  
           
