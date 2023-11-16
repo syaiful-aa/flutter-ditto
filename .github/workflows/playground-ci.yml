@@ -88,6 +88,7 @@ jobs:
       - name: process output
         run: |
           echo "result"
+          echo ${{ steps.compare-coverage.outputs.comparison_result }}
   
       - name: find average coverage
         id: get-app-coverage-average
@@ -103,7 +104,7 @@ jobs:
             #Job Summary
             
             ```
-            ${{steps.get-app-coverage-average.outputs.coverage_average}}
+            ${{steps.compare-coverage.outputs.current_average_coverage}}
             ```
             
             ${{ toJson(steps.get-app-testing.outputs.*) }}
@@ -141,7 +142,7 @@ jobs:
             ## Coverage Comparison
             
             ```
-            ${{steps.compare-coverage.outputs.comparison}}
+            ${{steps.compare-coverage.outputs.comparison_result}}
             ```
 
       - name: update latest release report
