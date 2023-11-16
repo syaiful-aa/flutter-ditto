@@ -54,18 +54,42 @@ jobs:
           echo "shopping_list_module=shopping_list_module : 91.6% (1018 of 1111 lines)" >> $GITHUB_OUTPUT
           echo "transaction_module=transaction_module : 73.5% (1839 of 2502 lines)" >> $GITHUB_OUTPUT
 
-          echo "release_version : 2.19.0" >> coverage_current
-          echo "agriaku_coin : 46.3% (62 of 134 lines)" >> coverage_current
-          echo "agriaku_mitra : 100.0% (11 of 11 lines)" >> coverage_current
-          echo "authentication_module : 94.5% (1109 of 1173 lines)" >> coverage_current
-          echo "discovery_module : 84.8% (1063 of 1254 lines)" >> coverage_current
-          echo "domain_module : 29.6% (270 of 911 lines)" >> coverage_current
-          echo "mitra_datasource : 27.5% (520 of 1891 lines)" >> coverage_current
-          echo "product_module : 81.9% (1340 of 1637 lines)" >> coverage_current
-          echo "review_module : 99.8% (428 of 429 lines)" >> coverage_current
-          echo "shopping_list_module : 91.6% (1018 of 1111 lines)" >> coverage_current
-          echo "transaction_module : 73.5% (1839 of 2502 lines)" >> coverage_current
+          coverage_current="release_version : 2.19.0"
+          coverage_current="${coverage_current} | agriaku_coin : 46.3% (62 of 134 lines)"
+          coverage_current="${coverage_current} | agriaku_mitra : 100.0% (11 of 11 lines)"
+          coverage_current="${coverage_current} | authentication_module : 94.5% (1109 of 1173 lines)"
+          coverage_current="${coverage_current} | discovery_module : 84.8% (1063 of 1254 lines)"
+          coverage_current="${coverage_current} | domain_module : 29.6% (270 of 911 lines)"
+          coverage_current="${coverage_current} | mitra_datasource : 27.5% (520 of 1891 lines)"
+          coverage_current="${coverage_current} | product_module : 81.9% (1340 of 1637 lines)"
+          coverage_current="${coverage_current} | review_module : 99.8% (428 of 429 lines)"
+          coverage_current="${coverage_current} | shopping_list_module : 91.6% (1018 of 1111 lines)"
+          coverage_current="${coverage_current} | transaction_module : 73.5% (1839 of 2502 lines)"
 
+          coverage_current="$( echo $coverage_current | sed 's/% (/, /g' |sed 's/ of /, /g' | sed 's/ lines)//g')"
+          echo "coverage_current=$coverage_current" >> $GITHUB_OUTPUT
+
+          echo "coverage_current" 
+          echo $coverage_current
+
+          echo "---"
+
+          coverage_previous=${{ vars.last_release_test_report }}
+          echo "coverage_previous" 
+          echo $coverage_previous
+
+      - name: compare
+        id: compare-coverage
+        # uses: Agriaku/agriaku_app_actions/compare-coverage@v1.5.0
+        uses: syaiful-aa/actions-experiment/compare-coverage@v3.4.0
+        with:
+          previous_data: ${{ vars.last_release_test_report }}
+          current_data: ${{ steps.get-app-testing.coverage_current }}
+
+      - name: process output
+        run: |
+          echo "result"
+  
       - name: find average coverage
         id: get-app-coverage-average
         run: |
@@ -90,46 +114,7 @@ jobs:
       #       for further detail you can check this action summary
       #       https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-      - name: compare
-        id: compare-coverage
-        # uses: Agriaku/agriaku_app_actions/compare-coverage@v1.5.0
-        uses: syaiful-aa/actions-experiment/compare-coverage@v3.4.0
-        with:
-          previous_data: ''
-          current_data: ''
-
-      - name: process output
-        id: process-output
-        env:
-          current_summary: ${{ steps.compare-coverage.outputs.current_summary }}
-        run: |
-          echo "${{ steps.compare-coverage.outputs.previous_version }}"
-          echo "${{ steps.compare-coverage.outputs.current_version }}"
-
-          echo "${{ steps.compare-coverage.outputs.current_summary }}"
-          echo "${{ steps.compare-coverage.outputs.current_result }}"
-
-          echo "${{ fromJson(steps.compare-coverage.outputs.current_summary).percentage }}"
-          echo "${{ fromJson(env.current_summary).covered_lines }} / ${{ fromJson(env.current_summary).total_lines }}"
-
-          echo "${{ steps.compare-coverage.outputs.comparison_raw }}" >> x
-          cat x
-
-          # echo "current_rx=$(jq -r -c . <<< "${{ toJson(steps.compare-coverage.outputs.current_result) }}")" >> $GITHUB_OUTPUT
-          
-      # - name: process output 2
-      #   run: |
-      #     echo "${{ steps.process-output.outputs.current_rx }}"
-      #     echo "${{ fromJson(steps.process-output.outputs.current_rx) }}"
-
-      #     for object in "${{ fromJson(steps.process-output.outputs.current_rx) }}"; do
-      #       echo $object
-      #     done
-
-
-
-
-
+      
       # - name: compare testing result with last release
       #   id: compare-coverage
       #   run: |
