@@ -1,5 +1,5 @@
 release_version: 2.18.0 --> 2.19.0
-agriaku_coin : 46.3% (62 of 134 lines) --> 46.3% (62 of 134 lines)
+agriaku_coin : (46.3% (62 of 134 lines)) --> 46.3% (62 of 134 lines)
 agriaku_mitra : 100.0% (11 of 11 lines) --> 100.0% (11 of 11 lines)
 authentication_module : 94.5% (1109 of 1173 lines) --> 94.5% (1109 of 1173 lines)
 discovery_module : 84.8% (1063 of 1254 lines) --> 84.8% (1063 of 1254 lines)
@@ -10,3 +10,5 @@ review_module : 99.8% (428 of 429 lines) --> 99.8% (428 of 429 lines)
 shopping_list_module : 91.6% (1018 of 1111 lines) --> 91.6% (1018 of 1111 lines)
 transaction_module : 73.5% (1839 of 2502 lines) --> 73.5% (1839 of 2502 lines)
 average_coverage : 72.87% (7390 of 10142 lines) --> 72.87% (7390 of 10142 lines)
+
+release_version: 2.18.0 --> 2.19.0 \nagriaku_coin : 46.3% (62 of 134 lines) --> 46.3% (62 of 134 lines) \nagriaku_mitra : 100.0% (11 of 11 lines) --> 100.0% (11 of 11 lines) \nauthentication_module : 94.5% (1109 of 1173 lines) --> 94.5% (1109 of 1173 lines) \ndiscovery_module : 84.8% (1063 of 1254 lines) --> 84.8% (1063 of 1254 lines) \ndomain_module : 29.6% (270 of 911 lines) \nmitra_datasource : 27.5% (520 of 1891 lines) --> 27.5% (520 of 1891 lines) \nproduct_module : 81.9% (1340 of 1637 lines) --> 81.9% (1340 of 1637 lines) \nreview_module : 99.8% (428 of 429 lines) --> 99.8% (428 of 429 lines) \nshopping_list_module : 91.6% (1018 of 1111 lines) --> 91.6% (1018 of 1111 lines) \ntransaction_module : 73.5% (1839 of 2502 lines) --> 73.5% (1839 of 2502 lines) \naverage_coverage : 72.87% (7390 of 10142 lines) --> 72.87% (7390 of 10142 lines)

@@ -92,26 +92,25 @@ jobs:
       - name: find average coverage
         id: get-app-coverage-average
         run: |
-          echo "coverage_average=none" >> $GITHUB_OUTPUT
-          echo "average_coverage : 99% (9999 of 9999 lines)" >> coverage_current
+          echo "coverage_average=${{ steps.compare-coverage.outputs.current_average_coverage}}" >> $GITHUB_OUTPUT
 
-      # - name: create comment
-      #   id: testing-result-comment
-      #   uses: peter-evans/create-or-update-comment@v2
-      #   with:
-      #     issue-number: ${{ steps.get-pr-details.outputs.number }}
-      #     body: |
-      #       #Job Summary
+      - name: create comment
+        id: testing-result-comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ steps.get-pr-details.outputs.number }}
+          body: |
+            #Job Summary
             
-      #       ```
-      #       ${{steps.get-app-coverage-average.outputs.coverage_average}}
-      #       ```
+            ```
+            ${{steps.get-app-coverage-average.outputs.coverage_average}}
+            ```
             
-      #       ${{ toJson(steps.get-app-testing.outputs.*) }}
+            ${{ toJson(steps.get-app-testing.outputs.*) }}
             
 
-      #       for further detail you can check this action summary
-      #       https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            for further detail you can check this action summary
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       
       # - name: compare testing result with last release
@@ -133,17 +132,17 @@ jobs:
       #     echo "$(cat coverage_comparison)" >> $GITHUB_OUTPUT
       #     echo "${delimiter}" >> $GITHUB_OUTPUT
 
-      # - name: create coverage comparison comment
-      #   id: coverage-comparison-comment
-      #   uses: peter-evans/create-or-update-comment@v2
-      #   with:
-      #     issue-number: ${{ steps.get-pr-details.outputs.number }}
-      #     body: |
-      #       ## Coverage Comparison
+      - name: create coverage comparison comment
+        id: coverage-comparison-comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ steps.get-pr-details.outputs.number }}
+          body: |
+            ## Coverage Comparison
             
-      #       ```
-      #       ${{steps.compare-coverage.outputs.result}}
-      #       ```
+            ```
+            ${{steps.compare-coverage.outputs.comparison}}
+            ```
 
       - name: update latest release report
         run: |
