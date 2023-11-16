@@ -74,9 +74,8 @@ jobs:
 
           echo "---"
 
-          coverage_previous=${{ vars.LAST_RELEASE_TEST_REPORT }}
           echo "coverage_previous" 
-          echo $coverage_previous
+          echo "${{ vars.LAST_RELEASE_TEST_REPORT }}"
 
       - name: compare
         id: compare-coverage
@@ -84,7 +83,7 @@ jobs:
         uses: syaiful-aa/actions-experiment/compare-coverage@v3.4.0
         with:
           previous_data: ${{ vars.LAST_RELEASE_TEST_REPORT }}
-          current_data: ${{ steps.get-app-testing.coverage_current }}
+          current_data: ${{ steps.get-app-testing.outputs.coverage_current }}
 
       - name: process output
         run: |
