@@ -42,16 +42,14 @@ jobs:
       - name: save comment to file
         id: save-comment
         run: |
-          # $(cat << EOF
-          # ${{ steps.get-pr-details.outputs.pr_body }} 
-          # EOF
-          # ) | grep '\- [' | sed 's/\r$//' > out
+          PR_BODY=$(echo "${{ github.event.issue.body }}" | tr -d '\r')
+          echo "${PR_BODY}" > out
 
-          {
-          echo '<<EOF'
-          ${{ steps.get-pr-details.outputs.pr_body }} 
-          echo EOF
-          } >> out
+          # {
+          # echo '<<EOF'
+          # ${{ steps.get-pr-details.outputs.pr_body }} 
+          # echo EOF
+          # } >> out
           
 
           # delimiter="$(openssl rand -hex 8)"
