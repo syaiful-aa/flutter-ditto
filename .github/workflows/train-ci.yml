@@ -42,8 +42,6 @@ jobs:
       - name: save comment to file
         id: save-comment
         run: |
-          echo ${{ steps.get-pr-details.outputs.pr_body}}
-
           delimiter="$(openssl rand -hex 8)"
           echo "result<<${delimiter}" >> $GITHUB_OUTPUT
           echo ${{ steps.get-pr-details.outputs.pr_body }} >> $GITHUB_OUTPUT
