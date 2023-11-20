@@ -1,0 +1,42 @@
+name: Train CI/CD
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/fire') 
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: |
+          echo "${{ vars }}"
+          echo "$GITHUB_CONTEXT"
+
+      - name: get pull request metadata
+        uses: xt0rted/pull-request-comment-branch@v1
+        id: comment-branch
+
+      - name: get PR details
+        uses: 8BitJonny/gh-get-current-pr@2.1.3
+        id: get-pr-details
+        with:
+          github-token: ${{ github.token }}
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+
+      - name: Get App Version from pubspec.yaml
+        id: get-app-version
+        run: |
+          app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
+          echo "data=$app_version" >> $GITHUB_OUTPUT
+
+      - name: play
+        run: |
+          echo "start"
+
+      
+
