@@ -45,7 +45,7 @@ jobs:
           $(cat << EOF
           ${{ steps.get-pr-details.outputs.pr_body }} 
           EOF
-          ) | grep '- [' | sed 's/\r$//' > out
+          ) | grep '\- [' | sed 's/\r$//' > out
           
 
           # delimiter="$(openssl rand -hex 8)"
