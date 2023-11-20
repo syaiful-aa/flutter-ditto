@@ -71,7 +71,6 @@ jobs:
       - name: play
         run: |
           echo "start"
-          echo ${{ steps.release-tag-message.outputs.message }}
           echo ${{ steps.release-tag-message.outputs.message }} > out
           cat out
           
