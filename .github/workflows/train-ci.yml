@@ -79,6 +79,15 @@ jobs:
 
           cat out
 
+      - name: create comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ steps.get-pr-details.outputs.number }}
+          body: |
+            ${{steps.release-tag-message.outputs.message}}
+            
+  
+
           
 
       
