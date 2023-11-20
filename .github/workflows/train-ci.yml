@@ -42,10 +42,16 @@ jobs:
       - name: save comment to file
         id: save-comment
         run: |
-          delimiter="$(openssl rand -hex 8)"
-          echo "result<<${delimiter}" >> $GITHUB_OUTPUT
-          echo ${{ steps.get-pr-details.outputs.pr_body }} >> $GITHUB_OUTPUT
-          echo "${delimiter}" >> $GITHUB_OUTPUT
+          res=$(cat << EOF
+          ${{ steps.get-pr-details.outputs.pr_body }} 
+          EOF
+          )
+          echo $res > out
+
+          # delimiter="$(openssl rand -hex 8)"
+          # echo "result<<${delimiter}" >> $GITHUB_OUTPUT
+          # echo ${{ steps.get-pr-details.outputs.pr_body }} >> $GITHUB_OUTPUT
+          # echo "${delimiter}" >> $GITHUB_OUTPUT
 
       - name: play
         run: |
