@@ -42,10 +42,16 @@ jobs:
       - name: save comment to file
         id: save-comment
         run: |
-          $(cat << EOF
+          # $(cat << EOF
+          # ${{ steps.get-pr-details.outputs.pr_body }} 
+          # EOF
+          # ) | grep '\- [' | sed 's/\r$//' > out
+
+          {
+          echo '<<EOF'
           ${{ steps.get-pr-details.outputs.pr_body }} 
-          EOF
-          ) | grep '\- [' | sed 's/\r$//' > out
+          echo EOF
+          } >> out
           
 
           # delimiter="$(openssl rand -hex 8)"
