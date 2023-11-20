@@ -10,27 +10,34 @@ jobs:
     if: github.event.pull_request.merged && github.base_ref == 'main'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: |
+          echo "${{ vars }}"
+          echo "$GITHUB_CONTEXT"
 
-    - name: get App Version from pubspec.yaml
-      id: get-app-version
-      run: |
-        app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
-        echo "result=$app_version" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: release tag message
-      id: release-tag-message
-      # uses: Agriaku/agriaku_app_actions/release-tag@v1.6.0
-      uses: syaiful-aa/actions-experiment/release-tag@v3.5.0
-      with:
-        pr_body: ${{ github.event.issue.body }}
+      - name: get App Version from pubspec.yaml
+        id: get-app-version
+        run: |
+          app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
+          echo "result=$app_version" >> $GITHUB_OUTPUT
 
-    - name: create and push tag
-      run: |
-        tag="v${{ steps.get-app-version.outputs.result }}"
-        # git config user.email "syaiful.salam@agriaku.com"
-        # git config user.name "syaiful-aa"
-        git tag -f $tag ${{ github.event.pull_request.head.sha }} -m $'${{steps.release-tag-message.outputs.message}}'
-        git push -f origin $tag
+      - name: release tag message
+        id: release-tag-message
+        # uses: Agriaku/agriaku_app_actions/release-tag@v1.6.0
+        uses: syaiful-aa/actions-experiment/release-tag@v3.5.0
+        with:
+          pr_body: ${{ github.event.issue.body }}
+
+      - name: create and push tag
+        run: |
+          tag="v${{ steps.get-app-version.outputs.result }}"
+          # git config user.email "syaiful.salam@agriaku.com"
+          # git config user.name "syaiful-aa"
+          git tag -f $tag ${{ github.event.pull_request.head.sha }} -m $'${{steps.release-tag-message.outputs.message}}'
+          git push -f origin $tag
