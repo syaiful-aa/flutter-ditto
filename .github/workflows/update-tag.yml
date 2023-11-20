@@ -7,8 +7,7 @@ on:
 
 jobs:
   publish_tags:
-    # if: github.event.pull_request.merged && github.base_ref == 'main'
-    if: github.event.pull_request.merged && github.base_ref == 'experiment/ci'
+    if: github.event.pull_request.merged && github.base_ref == 'main'
     runs-on: ubuntu-latest
     steps:
       - name: Dump GitHub context
