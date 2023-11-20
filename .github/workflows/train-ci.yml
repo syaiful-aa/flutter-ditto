@@ -42,8 +42,10 @@ jobs:
       - name: play
         run: |
           echo "start"
-          echo ${{ steps.get-app-version.outputs.app_version }}
-          echo ${{ github.event.issue.body }}
+          echo ${{ steps.get-app-version.outputs.data }}
+          echo ${{ github.event.issue.body }} > out
+          cat out
+          
 
       
 
