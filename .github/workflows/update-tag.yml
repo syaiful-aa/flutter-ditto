@@ -8,7 +8,7 @@ on:
 jobs:
   publish_tags:
     # if: github.event.pull_request.merged && github.base_ref == 'main'
-    if: github.event.pull_request.merged && github.base_ref == 'experiment/ci-main'
+    if: ${{ github.event.pull_request.merged && github.base_ref == 'experiment/ci-main' && startsWith(github.head_ref, 'release/rc') }}
     runs-on: ubuntu-latest
     steps:
       - name: Dump GitHub context
@@ -33,12 +33,12 @@ jobs:
         # uses: Agriaku/agriaku_app_actions/release-tag@v1.6.0
         uses: syaiful-aa/actions-experiment/release-tag@v3.5.0
         with:
-          pr_body: ${{ github.event.issue.body }}
+          pr_body: ${{ github.event.pull_request.body }}
 
       - name: create and push tag
         run: |
+          git config user.email "syaiful.salam@agriaku.com"
+          git config user.name "syaiful-bot"
           tag="v${{ steps.get-app-version.outputs.result }}"
-          # git config user.email "syaiful.salam@agriaku.com"
-          # git config user.name "syaiful-aa"
           git tag -f $tag ${{ github.event.pull_request.head.sha }} -m $'${{steps.release-tag-message.outputs.message}}'
           git push -f origin $tag
