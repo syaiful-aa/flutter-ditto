@@ -68,12 +68,12 @@ jobs:
       #     # echo ${{ steps.get-pr-details.outputs.pr_body }} >> $GITHUB_OUTPUT
       #     # echo "${delimiter}" >> $GITHUB_OUTPUT
 
-      # - name: play
-      #   run: |
-      #     echo "start"
-      #     echo ${{ steps.get-app-version.outputs.data }}
-      #     echo ${{ steps.save-comment.outputs.result }} > out
-      #     cat out
+      - name: play
+        run: |
+          echo "start"
+          echo ${{ steps.release-tag-message.outputs.message }}
+          echo ${{ steps.release-tag-message.outputs.message }} > out
+          cat out
           
 
       
