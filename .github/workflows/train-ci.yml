@@ -39,11 +39,19 @@ jobs:
           app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
           echo "data=$app_version" >> $GITHUB_OUTPUT
 
+      - name: save comment to file
+        id: save-comment
+        run: |
+          delimiter="$(openssl rand -hex 8)"
+          echo "result<<${delimiter}" >> $GITHUB_OUTPUT
+          echo ${{ github.event.issue.body }} >> $GITHUB_OUTPUT
+          echo "${delimiter}" >> $GITHUB_OUTPUT
+
       - name: play
         run: |
           echo "start"
           echo ${{ steps.get-app-version.outputs.data }}
-          echo ${{ github.event.issue.body }} > out
+          echo ${{ steps.save-comment.outputs.result }} > out
           cat out
           
 
