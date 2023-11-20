@@ -71,8 +71,14 @@ jobs:
       - name: play
         run: |
           echo "start"
-          echo ${{ steps.release-tag-message.outputs.message }} > out
+
+          delimiter="$(openssl rand -hex 8)"
+          echo "${delimiter}" >> out
+          echo "${{ steps.release-tag-message.outputs.message }}" >> out
+          echo "${delimiter}" >> out
+
           cat out
+
           
 
       
