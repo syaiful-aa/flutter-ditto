@@ -39,34 +39,41 @@ jobs:
           app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
           echo "data=$app_version" >> $GITHUB_OUTPUT
 
-      - name: save comment to file
-        id: save-comment
-        shell: bash
-        run: |
-          # PR_BODY=$(echo "${{ github.event.issue.body }}" | tr -d '\r')
-          # echo "${PR_BODY}" > out
+      - name: release tag message
+        id: release-tag-message
+        # uses: Agriaku/agriaku_app_actions/compare-coverage@v1.6.0
+        uses: syaiful-aa/actions-experiment/compare-coverage@v3.5.0
+        with:
+          pr_body: ${{ steps.get-pr-details.outputs.pr_body }}
+      
+      # - name: save comment to file
+      #   id: save-comment
+      #   shell: bash
+      #   run: |
+      #     # PR_BODY=$(echo "${{ github.event.issue.body }}" | tr -d '\r')
+      #     # echo "${PR_BODY}" > out
 
-          PR_BODY=$(echo "${{ github.event.issue.body }}" | awk '{ sub("\r$", ""); print }')
-          echo "${PR_BODY}" > out
+      #     PR_BODY=$(echo "${{ github.event.issue.body }}" | awk '{ sub("\r$", ""); print }')
+      #     echo "${PR_BODY}" > out
 
-          # {
-          # echo '<<EOF'
-          # ${{ steps.get-pr-details.outputs.pr_body }} 
-          # echo EOF
-          # } >> out
+      #     # {
+      #     # echo '<<EOF'
+      #     # ${{ steps.get-pr-details.outputs.pr_body }} 
+      #     # echo EOF
+      #     # } >> out
           
 
-          # delimiter="$(openssl rand -hex 8)"
-          # echo "result<<${delimiter}" >> $GITHUB_OUTPUT
-          # echo ${{ steps.get-pr-details.outputs.pr_body }} >> $GITHUB_OUTPUT
-          # echo "${delimiter}" >> $GITHUB_OUTPUT
+      #     # delimiter="$(openssl rand -hex 8)"
+      #     # echo "result<<${delimiter}" >> $GITHUB_OUTPUT
+      #     # echo ${{ steps.get-pr-details.outputs.pr_body }} >> $GITHUB_OUTPUT
+      #     # echo "${delimiter}" >> $GITHUB_OUTPUT
 
-      - name: play
-        run: |
-          echo "start"
-          echo ${{ steps.get-app-version.outputs.data }}
-          echo ${{ steps.save-comment.outputs.result }} > out
-          cat out
+      # - name: play
+      #   run: |
+      #     echo "start"
+      #     echo ${{ steps.get-app-version.outputs.data }}
+      #     echo ${{ steps.save-comment.outputs.result }} > out
+      #     cat out
           
 
       
