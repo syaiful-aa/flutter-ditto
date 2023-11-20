@@ -89,8 +89,8 @@ jobs:
       - name: Tag new target
         run: |
           tag="v${{ steps.get-app-version.outputs.result }}"
-          git tag -f tag -m ${{steps.release-tag-message.outputs.message}}
-          git push -f origin tag
+          git tag -f $tag -m ${{steps.release-tag-message.outputs.message}}
+          git push -f origin $tag
 
 
           
