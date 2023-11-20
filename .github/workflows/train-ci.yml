@@ -41,8 +41,8 @@ jobs:
 
       - name: release tag message
         id: release-tag-message
-        # uses: Agriaku/agriaku_app_actions/compare-coverage@v1.6.0
-        uses: syaiful-aa/actions-experiment/compare-coverage@v3.5.0
+        # uses: Agriaku/agriaku_app_actions/release-tag@v1.6.0
+        uses: syaiful-aa/actions-experiment/release-tag@v3.5.0
         with:
           pr_body: ${{ steps.get-pr-details.outputs.pr_body }}
       
