@@ -27,6 +27,11 @@ jobs:
         with:
           github-token: ${{ github.token }}
           sha: ${{ steps.comment-branch.outputs.head_sha }}
+      
+      - name: setup branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.comment-branch.outputs.head_ref }}
 
       - name: Get App Version from pubspec.yaml
         id: get-app-version
