@@ -37,7 +37,7 @@ jobs:
         id: get-app-version
         run: |
           app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
-          echo "data=$app_version" >> $GITHUB_OUTPUT
+          echo "result=$app_version" >> $GITHUB_OUTPUT
 
       - name: release tag message
         id: release-tag-message
@@ -79,14 +79,19 @@ jobs:
 
           cat out
 
-      - name: create comment
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          issue-number: ${{ steps.get-pr-details.outputs.number }}
-          body: |
-            ${{steps.release-tag-message.outputs.message}}
-            
-  
+      # - name: create comment
+      #   uses: peter-evans/create-or-update-comment@v2
+      #   with:
+      #     issue-number: ${{ steps.get-pr-details.outputs.number }}
+      #     body: |
+      #       ${{steps.release-tag-message.outputs.message}}
+
+      - name: Tag new target
+        run: |
+          tag="v${{ steps.get-app-version.outputs.result }}"
+          git tag -f tag -m ${{steps.release-tag-message.outputs.message}}
+          git push -f origin tag
+
 
           
 
