@@ -41,8 +41,12 @@ jobs:
 
       - name: save comment to file
         id: save-comment
+        shell: bash
         run: |
-          PR_BODY=$(echo "${{ github.event.issue.body }}" | tr -d '\r')
+          # PR_BODY=$(echo "${{ github.event.issue.body }}" | tr -d '\r')
+          # echo "${PR_BODY}" > out
+
+          PR_BODY=$(echo "${{ github.event.issue.body }}" | awk '{ sub("\r$", ""); print }')
           echo "${PR_BODY}" > out
 
           # {
