@@ -13,7 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          # ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - name: get app version from pubspec.yaml
         id: get-app-version
@@ -38,5 +39,5 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           tag="${{ steps.get-app-version.outputs.result }}"
-          git tag -f $tag ${{ github.event.pull_request.merge_commit_sha }} -m $'${{steps.release-tag-message.outputs.message}}'
+          git tag -f $tag -m $'${{steps.release-tag-message.outputs.message}}'
           git push -f origin $tag
