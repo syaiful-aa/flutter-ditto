@@ -7,22 +7,15 @@ on:
 
 jobs:
   publish_tags:
-    # if: github.event.pull_request.merged && github.base_ref == 'main'
-    if: ${{ github.event.pull_request.merged && github.base_ref == 'experiment/ci-main' && startsWith(github.head_ref, 'release/rc') }}
+    # if: github.event.pull_request.merged && github.base_ref == 'main' && startsWith(github.head_ref, 'release/rc') 
+    if: github.event.pull_request.merged && github.base_ref == 'experiment/ci-main' && startsWith(github.head_ref, 'release/rc') 
     runs-on: ubuntu-latest
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: |
-          echo "${{ vars }}"
-          echo "$GITHUB_CONTEXT"
-
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: get App Version from pubspec.yaml
+      - name: get app version from pubspec.yaml
         id: get-app-version
         run: |
           app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
@@ -39,6 +32,7 @@ jobs:
         run: |
           git config user.email "syaiful.salam@agriaku.com"
           git config user.name "syaiful-bot"
-          tag="v${{ steps.get-app-version.outputs.result }}"
-          git tag -f $tag ${{ github.event.pull_request.head.sha }} -m $'${{steps.release-tag-message.outputs.message}}'
+          tag="${{ steps.get-app-version.outputs.result }}"
+          # git tag -f $tag ${{ github.event.pull_request.head.sha }} -m $'${{steps.release-tag-message.outputs.message}}'
+          # git tag -f $tag -m $'${{steps.release-tag-message.outputs.message}}'
           git push -f origin $tag
