@@ -73,16 +73,16 @@ jobs:
       #     # echo ${{ steps.get-pr-details.outputs.pr_body }} >> $GITHUB_OUTPUT
       #     # echo "${delimiter}" >> $GITHUB_OUTPUT
 
-      - name: play
-        run: |
-          echo "start"
+      # - name: play
+      #   run: |
+      #     echo "start"
 
-          delimiter="$(openssl rand -hex 8)"
-          echo "<<${delimiter}" >> out
-          echo "${{ steps.release-tag-message.outputs.message }}" >> out
-          echo "${delimiter}" >> out
+      #     delimiter="$(openssl rand -hex 8)"
+      #     echo "<<${delimiter}" >> out
+      #     echo "${{ steps.release-tag-message.outputs.message }}" >> out
+      #     echo "${delimiter}" >> out
 
-          cat out
+      #     cat out
 
       # - name: create comment
       #   uses: peter-evans/create-or-update-comment@v2

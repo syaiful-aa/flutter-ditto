@@ -7,8 +7,8 @@ on:
 
 jobs:
   publish_tags:
-    # if: github.event.pull_request.merged && github.base_ref == 'main' && startsWith(github.head_ref, 'release/rc') 
-    if: github.event.pull_request.merged && github.base_ref == 'experiment/ci-main' && startsWith(github.head_ref, 'release/rc') 
+    # if: github.event.pull_request.merged && github.base_ref == 'main' && startsWith(github.head_ref, 'release/') 
+    if: github.event.pull_request.merged && github.base_ref == 'experiment/ci-main' && startsWith(github.head_ref, 'release/') 
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -19,6 +19,11 @@ jobs:
         id: get-app-version
         run: |
           app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
+          ref_branch=${{ github.head_ref }}
+          if [[ $ref_branch == *"release/hf"* ]]; then
+            patch_version="${ref_branch##*-}"
+            app_version="${app_version}-patch-${patch_version}"
+          fi
           echo "result=$app_version" >> $GITHUB_OUTPUT
 
       - name: release tag message
@@ -30,9 +35,8 @@ jobs:
 
       - name: create and push tag
         run: |
-          git config user.email "syaiful.salam@agriaku.com"
-          git config user.name "syaiful-bot"
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
           tag="${{ steps.get-app-version.outputs.result }}"
-          # git tag -f $tag ${{ github.event.pull_request.head.sha }} -m $'${{steps.release-tag-message.outputs.message}}'
-          # git tag -f $tag -m $'${{steps.release-tag-message.outputs.message}}'
+          git tag -f $tag ${{ github.event.pull_request.merge_commit_sha }} -m $'${{steps.release-tag-message.outputs.message}}'
           git push -f origin $tag
