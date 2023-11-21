@@ -2,10 +2,6 @@ name: Experiment - Fire
 
 on:
   workflow_dispatch:
-    inputs:
-      run-test:
-        type: boolean
-        description: Run unit test
 
 jobs:
   woosh:
@@ -13,35 +9,13 @@ jobs:
       run:
         shell: bash
     runs-on: ubuntu-latest
-    env:
-      is_compare_coverage: ${{ github.workflow == 'Experiment- Fire' }}
     steps:
       - name: check bash
         run: |
-          echo ${{ inputs.run-test }}
-          echo ${{ env.is_compare_coverage }}
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          tag="1.0.0"
+          git tag -f $tag 3b1be9c7ea06f3f09e266e8722e9571f7017feaf -m 'oit'
+          git push -f origin $tag
 
-      - name: check dispatch input
-        if: ${{ inputs.run-test }}
-        run: echo "pass"
-
-      - name: check env
-        if: ${{ env.is_compare_coverage }}
-        run: echo "pass"
-
-      - name: check env true
-        if: ${{ env.is_compare_coverage == true }}
-        run: echo "pass"
-
-      - name: check env true string
-        if: ${{ env.is_compare_coverage == 'true' }}
-        run: echo "pass"
-
-      - name: check env false
-        if: ${{ env.is_compare_coverage == false }}
-        run: echo "pass"
-
-      - name: check env false string
-        if: ${{ env.is_compare_coverage == 'false' }}
-        run: echo "pass"
-
+      
