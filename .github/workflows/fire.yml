@@ -10,7 +10,11 @@ jobs:
         shell: bash
     runs-on: ubuntu-latest
     steps:
-      - name: check bash
+      - uses: actions/checkout@v3
+        with:
+          ref: 3b1be9c7ea06f3f09e266e8722e9571f7017feaf
+
+      - name: update tag
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
