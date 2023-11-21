@@ -16,8 +16,8 @@ jobs:
           # ref: ${{ github.event.pull_request.head.sha }}
           ref: ${{ github.event.pull_request.merge_commit_sha }}
 
-      - name: get app version from pubspec.yaml
-        id: get-app-version
+      - name: create tag
+        id: create-tag
         run: |
           app_version=$(cat ./app/pubspec.yaml | grep 'version' | cut -d ':' -f2 | cut -d '+' -f1 | sed 's/ //')
           ref_branch=${{ github.head_ref }}
@@ -27,8 +27,8 @@ jobs:
           fi
           echo "result=$app_version" >> $GITHUB_OUTPUT
 
-      - name: release tag message
-        id: release-tag-message
+      - name: create tag message
+        id: create-tag-message
         # uses: Agriaku/agriaku_app_actions/release-tag@v1.6.0
         uses: syaiful-aa/actions-experiment/release-tag@v3.5.0
         with:
@@ -38,6 +38,6 @@ jobs:
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
-          tag="${{ steps.get-app-version.outputs.result }}"
-          git tag -f $tag -m $'${{steps.release-tag-message.outputs.message}}'
+          tag="${{ steps.create-tag.outputs.result }}"
+          git tag -f $tag -m $'${{steps.create-tag-message.outputs.message}}'
           git push -f origin $tag
