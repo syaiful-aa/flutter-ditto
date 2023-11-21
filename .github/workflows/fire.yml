@@ -14,7 +14,7 @@ jobs:
         shell: bash
     runs-on: ubuntu-latest
     env:
-      is_compare_coverage: ${{ github.workflow == 'Experiment - Fire' }}
+      is_compare_coverage: ${{ github.workflow == 'Experiment- Fire' }}
     steps:
       - name: check bash
         run: |
