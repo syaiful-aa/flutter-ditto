@@ -1,8 +1,7 @@
 name: Experiment - Fire
 
-on:
-  workflow_dispatch:
-
+on: push
+  
 jobs:
   woosh:
     defaults:
@@ -10,16 +9,29 @@ jobs:
         shell: bash
     runs-on: ubuntu-latest
     steps:
+      - name: setup
+        id: setup
+        run: |
+          current_sprint="${{ vars.CURRENT_SPRINT }}"
+          current_sprint_branch=sprint-$current_sprint
+
+          next_sprint=$(($current_sprint+1))
+          next_sprint_branch=sprint-$next_sprint
+
+          echo "current_sprint_branch=$current_sprint_branch" >> $GITHUB_OUTPUT
+          echo "next_sprint=$next_sprint" >> $GITHUB_OUTPUT
+          echo "next_sprint_branch=$next_sprint_branch" >> $GITHUB_OUTPUT
+
       - uses: actions/checkout@v3
         with:
-          ref: 3b1be9c7ea06f3f09e266e8722e9571f7017feaf
+          ref: ${{ steps.setup.outputs.current_sprint_branch }}
 
-      - name: update tag
+      - name: create branch
         run: |
-          git config user.email "action@github.com"
-          git config user.name "GitHub Action"
-          tag="1.0.0"
-          git tag -f $tag 3b1be9c7ea06f3f09e266e8722e9571f7017feaf -m 'oit'
-          git push -f origin $tag
+          # git config user.email "action@github.com"
+          # git config user.name "GitHub Action"
+          
+          git checkout -b ${{ steps.setup.outputs.next_sprint_branch }}
+          git push origin ${{ steps.setup.outputs.next_sprint_branch }}
 
       
