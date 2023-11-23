@@ -1,0 +1,48 @@
+name: Update Sprint Branch 2
+
+on:
+  schedule:
+    # - cron: "0 17 * * 2" #every tuesday midnight (GMT+7)
+    - cron: "0 16 * * 4" #every thursday at 15.00 WIB
+  
+jobs:
+  woosh:
+    defaults:
+      run:
+        shell: bash
+    runs-on: ubuntu-latest
+    steps: 
+      - name: setup
+        id: setup
+        run: |
+          current_sprint="${{ vars.CURRENT_SPRINT }}"
+          current_sprint_branch=sprint-$current_sprint
+
+          next_sprint=$(($current_sprint+1))
+          next_sprint_branch=sprint-$next_sprint
+
+          echo "current_sprint_branch=$current_sprint_branch" >> $GITHUB_OUTPUT
+          echo "next_sprint=$next_sprint" >> $GITHUB_OUTPUT
+          echo "next_sprint_branch=$next_sprint_branch" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.setup.outputs.current_sprint_branch }}
+
+      - name: create branch
+        run: |
+          git checkout -b ${{ steps.setup.outputs.next_sprint_branch }}
+          git push origin ${{ steps.setup.outputs.next_sprint_branch }}
+
+      - name: update repository variables
+        run: |
+          curl -L \
+          -X PATCH \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.PAT }}" \
+          https://api.github.com/repos/${{ github.repository }}/actions/variables/CURRENT_SPRINT \
+          -d '{
+              "value":"${{ steps.setup.outputs.next_sprint  }}"
+            }'
+
+      
