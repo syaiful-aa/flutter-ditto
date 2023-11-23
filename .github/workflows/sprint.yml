@@ -2,8 +2,8 @@ name: Update Sprint Branch
 
 on:
   schedule:
-    # - "0 17 * * 2" #every tuesday midnight (GMT+7)
-    - "45 8 * * 4" #every thursday at 15.00 WIB
+    # - cron: "0 17 * * 2" #every tuesday midnight (GMT+7)
+    - cron: "45 8 * * 4" #every thursday at 15.00 WIB
   
 jobs:
   woosh:
